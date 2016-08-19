@@ -2,21 +2,36 @@
 #define HEAPVIZWINDOW_H
 
 #include <QMainWindow>
+#include <QKeyEvent>
+#include <QStatusBar>
+
+#include "heapblock.h"
 
 namespace Ui {
 class HeapVizWindow;
 }
 
-class HeapVizWindow : public QMainWindow
-{
-    Q_OBJECT
+class HeapVizWindow : public QMainWindow {
+  Q_OBJECT
 
 public:
-    explicit HeapVizWindow(QWidget *parent = 0);
-    ~HeapVizWindow();
+  explicit HeapVizWindow(QWidget *parent = 0);
+  ~HeapVizWindow();
 
-private:
-    Ui::HeapVizWindow *ui;
+protected:
+  void keyPressEvent(QKeyEvent *e);
+
+public slots:
+  void blockClicked(bool, HeapBlock);
+
+protected slots:
+  void update();
+
+private slots:
+
+private :
+  Ui::HeapVizWindow *ui;
+  QStatusBar statusbar_;
 };
 
 #endif // HEAPVIZWINDOW_H
