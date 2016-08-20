@@ -42,6 +42,7 @@ void HeapBlock::toVertices(uint32_t max_tick,
   uint64_t upper_left_y = upper_right_y;
 
   // Create new vertices.
+
   vertices->push_back(HeapVertex(lower_left_x, lower_left_y, *current_color_light));
   vertices->push_back(
       HeapVertex(lower_right_x, lower_right_y, *current_color_dark));

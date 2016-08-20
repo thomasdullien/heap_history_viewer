@@ -14,7 +14,9 @@ HeapConflict::HeapConflict(uint32_t tick, uint64_t address, bool alloc)
 HeapWindow::HeapWindow(uint64_t min, uint64_t max, uint32_t mintick,
                        uint32_t maxtick)
     : minimum_address_(min), maximum_address_(max), minimum_tick_(mintick),
-      maximum_tick_(maxtick) {}
+      maximum_tick_(maxtick) {
+  printf("huh?\n");
+}
 
 // ContinousHeapWindows are used for selecting an area of the heap for displaying.
 ContinuousHeapWindow::ContinuousHeapWindow(uint64_t min, uint64_t max,
@@ -72,8 +74,8 @@ void ContinuousHeapWindow::pan(double dx, double dy) {
 void ContinuousHeapWindow::zoomToPoint(double dx, double dy, double how_much_x,
                                        double how_much_y) {
   double epsilon = 0.05;
-  double extra_height = (height() * how_much_y) - height();
-  double extra_width = (width() * how_much_x) - width();
+  double extra_height = (heightAsDouble() * how_much_y) - heightAsDouble();
+  double extra_width = (widthAsDouble() * how_much_x) - widthAsDouble();
 
   // Make sure we move a little more toward the point than we need to keep the
   // point constant on screen.
@@ -106,7 +108,10 @@ void ContinuousHeapWindow::zoomToPoint(double dx, double dy, double how_much_x,
 // The code for the heap history.
 HeapHistory::HeapHistory()
     : current_tick_(0), current_window_(0, 1, 0, 1),
-      global_area_(std::numeric_limits<uint32_t>::max(), 0, 0, 1) {}
+      global_area_(std::numeric_limits<uint64_t>::max(), 0, 0, 1) {
+
+
+}
 
 void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
   nlohmann::json incoming_data;
@@ -124,7 +129,7 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
       printf("[!] Need to parse/display events, no support yet.\n");
     }
     fflush(stdout);
-    if (counter++ > 1)
+    if (counter++ > 1000)
       break;
   }
   printf("heap_blocks_.size() is %d\n", heap_blocks_.size());

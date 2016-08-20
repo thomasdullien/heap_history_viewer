@@ -52,19 +52,15 @@ private:
   void updateHeapToScreenMap();
   void updateUnitSquareToHeapMap();
 
-  // Matrices and vectors for the mappings from heap space to screen
-  // space, from the unit square to the heap space, the necessary
-  // inverses.
-  QMatrix2x2 unit_square_to_heap_matrix_;
-  QVector2D unit_square_to_heap_translation_;
+  void getScaleFromHeapToScreen(double* scale_x, double* scale_y);
+  void getScaleFromScreenToHeap(double* scale_x, double* scale_y);
+  void screenToHeap(double, double, uint32_t* tick, uint64_t* address);
+  void heapToScreen(uint32_t tick, uint64_t address, double*, double*);
   // Due to limited precision of floats, a straight mapping from the
   // heap to the screen space can have a degenerate matrix with a zero
   // entry. In order to prevent this, the scaling down is implemented
   // with two matrices that are applied iteratively.
   QMatrix2x2 heap_to_screen_matrix_;
-  // Since this mapping isn't going ot the GPU, it is more practical
-  // to keep it as a QTransform.
-  QTransform screen_to_heap_;
 
   // VAO, VBO and shader for the heap blocks.
   QOpenGLBuffer heap_vertex_buffer_;

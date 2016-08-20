@@ -46,8 +46,10 @@ public:
   ContinuousHeapWindow() {}
   ContinuousHeapWindow(uint64_t min, uint64_t max, uint32_t mintick,
                        uint32_t maxtick);
-  double height() { return maximum_address_ - minimum_address_; }
-  double width() { return maximum_tick_ - minimum_tick_; }
+  double heightAsDouble() const { return maximum_address_ - minimum_address_; }
+  double widthAsDouble() const { return maximum_tick_ - minimum_tick_; }
+  uint64_t height() const { return maximum_address_ - minimum_address_; }
+  uint32_t width() const { return maximum_tick_ - minimum_tick_; }
   void reset(const HeapWindow &window) {
     minimum_address_ = window.minimum_address_;
     maximum_address_ = window.maximum_address_;

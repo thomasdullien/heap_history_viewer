@@ -68,9 +68,11 @@ void GLHeapDiagram::setupGridGLStructures() {
   grid_shader_->enableAttributeArray(0);
   grid_shader_->enableAttributeArray(1);
   grid_shader_->setAttributeBuffer(0, GL_FLOAT, HeapVertex::positionOffset(),
-                                   HeapVertex::PositionTupleSize, HeapVertex::stride());
+                                   HeapVertex::PositionTupleSize,
+                                   HeapVertex::stride());
   grid_shader_->setAttributeBuffer(1, GL_FLOAT, HeapVertex::colorOffset(),
-                                   HeapVertex::ColorTupleSize, HeapVertex::stride());
+                                   HeapVertex::ColorTupleSize,
+                                   HeapVertex::stride());
   glBindAttribLocation(grid_shader_->programId(), 0, "position");
   glBindAttribLocation(grid_shader_->programId(), 1, "color");
 
@@ -99,7 +101,7 @@ void GLHeapDiagram::setupHeapblockGLStructures() {
   heap_vertex_buffer_.allocate(&(g_vertices[0]),
                                g_vertices.size() * sizeof(HeapVertex));
 
-  for (const HeapVertex& vertex : g_vertices) {
+  for (const HeapVertex &vertex : g_vertices) {
     printf("[!] Vertex is %lx, %lx\n", vertex.getX(), vertex.getY());
   }
   fflush(stdout);
@@ -124,9 +126,9 @@ void GLHeapDiagram::setupHeapblockGLStructures() {
   heap_shader_program_->setAttributeBuffer(
       0, GL_FLOAT, HeapVertex::positionOffset(), HeapVertex::PositionTupleSize,
       HeapVertex::stride());
-  heap_shader_program_->setAttributeBuffer(1, GL_FLOAT, HeapVertex::colorOffset(),
-                                           HeapVertex::ColorTupleSize,
-                                           HeapVertex::stride());
+  heap_shader_program_->setAttributeBuffer(
+      1, GL_FLOAT, HeapVertex::colorOffset(), HeapVertex::ColorTupleSize,
+      HeapVertex::stride());
   glBindAttribLocation(heap_shader_program_->programId(), 0, "position");
   glBindAttribLocation(heap_shader_program_->programId(), 1, "color");
 
@@ -144,19 +146,19 @@ void GLHeapDiagram::initializeGL() {
 
   // Load the heap history.
   std::ifstream ifs("/tmp/heap.json", std::fstream::in);
-//  heap_history_.LoadFromJSONStream(ifs);
-  heap_history_.recordMalloc(0x200000, 0x200);
-  heap_history_.recordMalloc(0x200204, 0x200);
-  heap_history_.recordMalloc(0x200408, 0x200);
-  heap_history_.recordFree(0x200000);
-  heap_history_.recordFree(0x200408);
-  heap_history_.recordFree(0x200204);
-  heap_history_.recordMalloc(0x200200, 0x100);
-  heap_history_.recordMalloc(0x200304, 0x100);
-//  heap_history_.recordFree(0x200200);
-  heap_history_.recordFree(0x200304);
-  //heap_history_.recordMalloc(140737323938016 >> 15, 0x200);
-  printf("[!] %lx fails, %lx succeeds\n", 140737323938016, 140737323938016 >> 15);
+ // heap_history_.LoadFromJSONStream(ifs);
+  uint64_t base = 0x100000000;
+  heap_history_.recordMalloc(0x200000+base, 0x200);
+  heap_history_.recordMalloc(0x200204+base, 0x200);
+  heap_history_.recordMalloc(0x200408+base, 0x200);
+  heap_history_.recordFree(0x200000+base);
+  heap_history_.recordFree(0x200408+base);
+  heap_history_.recordFree(0x200204+base);
+  heap_history_.recordMalloc(0x200200+base, 0x100);
+  heap_history_.recordMalloc(0x200304+base, 0x100);
+  heap_history_.recordFree(0x200200+base);
+  heap_history_.recordFree(0x200304+base);
+    //heap_history_.recordMalloc(140737323938016 >> 15, 0x200);
   heap_history_.setCurrentWindowToGlobal();
 
   setupHeapblockGLStructures();
@@ -202,28 +204,65 @@ QSize GLHeapDiagram::sizeHint() { return QSize(1024, 1024); }
 //      and not scale another time.
 //
 void GLHeapDiagram::updateHeapToScreenMap() {
-  uint64_t current_window_height =
-      heap_history_.getCurrentWindow().getMaximumAddress() -
-      heap_history_.getCurrentWindow().getMinimumAddress();
-  uint64_t current_window_width =
-      heap_history_.getCurrentWindow().getMaximumTick() -
-      heap_history_.getCurrentWindow().getMinimumTick();
-  double y_scaling = 1.0 / static_cast<double>(current_window_height);
-  double x_scaling = 1.0 / static_cast<double>(current_window_width);
+  double y_scaling;
+  double x_scaling;
+  getScaleFromHeapToScreen(&x_scaling, &y_scaling);
 
   heap_to_screen_matrix_.data()[0] = sqrt(x_scaling);
   heap_to_screen_matrix_.data()[3] = sqrt(y_scaling);
+}
 
-  // Update the inverse mapping, too.
-  QPolygonF target_quad;
-  const ContinuousHeapWindow &window = heap_history_.getCurrentWindow();
-  QPointF ll(window.getMinimumTickAsDouble(), window.getMinimumAddress());
-  QPointF lr(window.getMaximumTickAsDouble(), window.getMinimumAddress());
-  QPointF ur(window.getMaximumTickAsDouble(), window.getMaximumAddressAsDouble());
-  QPointF ul(window.getMinimumTickAsDouble(), window.getMaximumAddressAsDouble());
-  target_quad << ul << ur << lr << ll; // << ul << ur << lr;
+void GLHeapDiagram::getScaleFromHeapToScreen(double *scale_x, double *scale_y) {
+  double y_scaling =
+      1.0 / static_cast<double>(heap_history_.getCurrentWindow().height());
+  double x_scaling =
+      1.0 / static_cast<double>(heap_history_.getCurrentWindow().width());
+  *scale_x = x_scaling;
+  *scale_y = y_scaling;
+}
 
-  QTransform::squareToQuad(target_quad, screen_to_heap_);
+void GLHeapDiagram::getScaleFromScreenToHeap(double *scale_x, double *scale_y) {
+  double y_scaling =
+      static_cast<double>(heap_history_.getCurrentWindow().height());
+  double x_scaling =
+      static_cast<double>(heap_history_.getCurrentWindow().width());
+  *scale_x = x_scaling;
+  *scale_y = y_scaling;
+}
+
+void GLHeapDiagram::screenToHeap(double x, double y, uint32_t *tick,
+                                 uint64_t *address) {
+  double x_scaling;
+  double y_scaling;
+  getScaleFromScreenToHeap(&x_scaling, &y_scaling);
+
+  uint64_t unrebased_heap_address = y * y_scaling;
+  uint64_t rebased_address =
+      unrebased_heap_address +
+      heap_history_.getCurrentWindow().getMinimumAddress();
+  uint32_t unrebased_tick = x * x_scaling;
+  uint32_t rebased_tick =
+      unrebased_tick + heap_history_.getCurrentWindow().getMinimumTick();
+
+  *tick = rebased_tick;
+  *address = rebased_address;
+}
+
+void GLHeapDiagram::heapToScreen(uint32_t tick, uint64_t address, double *x,
+                                 double *y) {
+  double y_scaling;
+  double x_scaling;
+  getScaleFromHeapToScreen(&x_scaling, &y_scaling);
+
+  uint64_t rebased_address =
+      address - heap_history_.getCurrentWindow().getMinimumAddress();
+  double heap_address = rebased_address * y_scaling;
+  uint32_t rebased_tick =
+      tick - heap_history_.getCurrentWindow().getMinimumTick();
+  double tick_point = rebased_tick * x_scaling;
+
+  *x = tick_point;
+  *y = heap_address;
 }
 
 /*void GLHeapDiagram::updateUnitSquareToHeapMap() {
@@ -231,10 +270,14 @@ void GLHeapDiagram::updateHeapToScreenMap() {
   QPolygonF target_quad;
   const ContinuousHeapWindow &window =
       heap_history_.getGridWindow(number_of_grid_lines_);
-  target_quad << QPointF(window.getMinimumTickAsDouble(), window.getMinimumAddress())
-              << QPointF(window.getMaximumTickAsDouble(), window.getMinimumAddress())
-              << QPointF(window.getMaximumTickAsDouble(), window.getMaximumAddressAsDouble())
-              << QPointF(window.getMinimumTickAsDouble(), window.getMaximumAddressAsDouble());
+  target_quad << QPointF(window.getMinimumTickAsDouble(),
+window.getMinimumAddress())
+              << QPointF(window.getMaximumTickAsDouble(),
+window.getMinimumAddress())
+              << QPointF(window.getMaximumTickAsDouble(),
+window.getMaximumAddressAsDouble())
+              << QPointF(window.getMinimumTickAsDouble(),
+window.getMaximumAddressAsDouble());
 
   // Build a mapping from the unit square grid to the current window.
   QTransform::squareToQuad(target_quad, grid_transform);
@@ -256,18 +299,33 @@ void GLHeapDiagram::paintGL() {
   heap_shader_program_->setUniformValue(uniform_vertex_to_screen_,
                                         heap_to_screen_matrix_);
 
-  heap_shader_program_->setUniformValue(uniform_visible_heap_base_A_,
-    heap_history_.getCurrentWindow().getMinimumAddressLow32());
-  heap_shader_program_->setUniformValue(uniform_visible_heap_base_B_,
-    heap_history_.getCurrentWindow().getMinimumAddressHigh32());
-  heap_shader_program_->setUniformValue(uniform_minimum_visible_tick_,
-    heap_history_.getCurrentWindow().getMinimumTick());
+  heap_shader_program_->setUniformValue(
+      uniform_visible_heap_base_A_,
+      heap_history_.getCurrentWindow().getMinimumAddressLow32());
+  heap_shader_program_->setUniformValue(
+      uniform_visible_heap_base_B_,
+      heap_history_.getCurrentWindow().getMinimumAddressHigh32());
+  heap_shader_program_->setUniformValue(
+      uniform_minimum_visible_tick_,
+      heap_history_.getCurrentWindow().getMinimumTick());
   {
     heap_block_vao_.bind();
     glDrawArrays(GL_TRIANGLES, 0, g_vertices.size() * sizeof(HeapVertex));
     heap_block_vao_.release();
   }
   heap_shader_program_->release();
+
+  printf("height is %lx, width is %lx\n", heap_history_.getCurrentWindow().height(), heap_history_.getCurrentWindow().width());
+  printf("minimum_address is %lx, maximum_address is %lx\n", heap_history_.getCurrentWindow().getMinimumAddress(), heap_history_.getCurrentWindow().getMaximumAddress());
+  for (const HeapVertex &vertex : g_vertices) {
+    double x, y;
+    heapToScreen(vertex.getX(), vertex.getY(), &x, &y);
+    printf("[!] Vertex is %lx, %lx -> %f %f\n", vertex.getX(), vertex.getY(),
+           x, y);
+  }
+  fflush(stdout);
+
+
 
   /*
   // Render the grid.
@@ -306,8 +364,9 @@ GLHeapDiagram::~GLHeapDiagram() {
 void GLHeapDiagram::mousePressEvent(QMouseEvent *event) {
   double x = static_cast<double>(event->x()) / this->width();
   double y = static_cast<double>(event->y()) / this->height();
-  double tick, address;
-  screen_to_heap_.map(x, y, &tick, &address);
+  uint32_t tick;
+  uint64_t address;
+  screenToHeap(x, y, &tick, &address);
   HeapBlock current_block;
   uint32_t index;
 

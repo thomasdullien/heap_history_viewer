@@ -30,9 +30,9 @@ ivec2 SubUint64(ivec2 a, ivec2 b) {
   // We do not have unsigned shift.
   int borrow = (
               ((a.x ^ 0xFFFFFFFF) & b.x) |
-              ((((a.x ^ b.x) ^ 0xFFFFFFFF) & (sub_lower_word ^ 0xFFFFFFFF))));
+              ((((a.x ^ b.x) ^ 0xFFFFFFFF) & (sub_lower_word))));
   int borrow_flag = 0;
-  if (borrow == 1) {
+  if ((borrow & 0x80000000) != 0) {
       borrow_flag = 1;
   }
   int sub_upper_word = a.y - b.y - borrow_flag;
@@ -81,8 +81,12 @@ void main(void)
    float final_x = (tick * scale_heap_to_screen[0][0])
            * scale_heap_to_screen[0][0];
 
+   final_y = final_y - 1;
+   final_x = final_x - 1;
    gl_Position = vec4(final_x, final_y, 0.0, 1.0);
-   if (final_x > 0.4) {
+   // For debugging, uncomment the following line.
+   //gl_Position = vec4(color.r, color.g, 0.0, 1.0);
+   if (final_x > 5.0) {
        vColor = vec4(1.0, 0.0, 0.0, 1.0);
    } else if (final_y > 0) {
        vColor = vec4(0.0, 1.0, 0.0, 1.0);
