@@ -19,11 +19,8 @@ public:
   static inline int colorOffset() { return offsetof(HeapVertex, color_); }
   static inline int stride() { return sizeof(HeapVertex); }
 
-  double getX() const { return static_cast<double>(x_); }
-  double getY() const {
-    return static_cast<double>((static_cast<uint64_t>(y1_) << 32) +
-                               static_cast<uint64_t>(y2_));
-  }
+  uint32_t getX() const { return x_; }
+  uint64_t getY() const { return (static_cast<uint64_t>(y2_) << 32) + y1_; }
   const QVector3D &getColor() const { return color_; }
 
   static const int PositionTupleSize = 3;

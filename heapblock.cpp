@@ -22,20 +22,24 @@ void HeapBlock::toVertices(uint32_t max_tick,
   QVector3D const *current_color_light = &color_freed_light;
   QVector3D const *current_color_dark = &color_freed_dark;
 
-  float lower_left_x = start_tick_;
-  float lower_left_y = address_;
-  float lower_right_x = end_tick_;
+  uint32_t lower_left_x = start_tick_;
+  uint64_t lower_left_y = address_;
+  uint32_t lower_right_x = end_tick_;
   // The block is not free
   if (end_tick_ == std::numeric_limits<uint32_t>::max()) {
     lower_right_x = max_tick * 1.1;
+    if (lower_right_x == max_tick) {
+      // Sometimes max_tick is too small still.
+      lower_right_x = max_tick+5;
+    }
     current_color_light = &color_allocated_light;
     current_color_dark = &color_allocated_dark;
   }
-  float lower_right_y = lower_left_y;
-  float upper_right_x = lower_right_x;
-  float upper_right_y = address_ + size_;
-  float upper_left_x = lower_left_x;
-  float upper_left_y = upper_right_y;
+  uint64_t lower_right_y = lower_left_y;
+  uint32_t upper_right_x = lower_right_x;
+  uint64_t upper_right_y = address_ + size_;
+  uint32_t upper_left_x = lower_left_x;
+  uint64_t upper_left_y = upper_right_y;
 
   // Create new vertices.
   vertices->push_back(HeapVertex(lower_left_x, lower_left_y, *current_color_light));
@@ -47,4 +51,20 @@ void HeapBlock::toVertices(uint32_t max_tick,
   vertices->push_back(
       HeapVertex(upper_right_x, upper_right_y, *current_color_light));
   vertices->push_back(HeapVertex(upper_left_x, upper_left_y, *current_color_dark));
+/*
+  static const QVector3D color_A(0.0, 0.0, 1.0);
+  static const QVector3D color_B(1.0, 0.0, 1.0);
+  static const QVector3D color_C(1.0, 1.0, 1.0);
+  vertices->push_back(HeapVertex(lower_left_x, lower_left_y,
+                                 color_A));
+  vertices->push_back(
+      HeapVertex(lower_right_x, lower_right_y,
+                 color_B));
+  vertices->push_back(HeapVertex(upper_left_x, upper_left_y,
+                                 color_C));*/
+  /*vertices->push_back(
+      HeapVertex(lower_right_x, lower_right_y, color_A));
+  vertices->push_back(
+      HeapVertex(upper_right_x, upper_right_y, color_B));
+  vertices->push_back(HeapVertex(upper_left_x, upper_left_y, color_C));*/
 }

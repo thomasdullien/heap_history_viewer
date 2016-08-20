@@ -58,8 +58,6 @@ float Multiply64BitWithFloat(ivec2 a, float b) {
 
 void main(void)
 {
-   gl_Position = vec4(color.r, color.g, 0.0, 1.0);
-
    // Read the X (tick) and Y (address) coordinate.
    int tick = position.x;
    ivec2 address = ivec2(position.y, position.z);
@@ -83,5 +81,12 @@ void main(void)
    float final_x = (tick * scale_heap_to_screen[0][0])
            * scale_heap_to_screen[0][0];
 
-   vColor = vec4(final_x, final_y, 1.0, 1.0);
+   gl_Position = vec4(final_x, final_y, 0.0, 1.0);
+   if (final_x > 0.4) {
+       vColor = vec4(1.0, 0.0, 0.0, 1.0);
+   } else if (final_y > 0) {
+       vColor = vec4(0.0, 1.0, 0.0, 1.0);
+   } else {
+       vColor = vec4(0.0, 0.0, 1.0, 1.0);
+   }
 }

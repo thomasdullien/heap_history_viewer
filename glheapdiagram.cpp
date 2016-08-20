@@ -100,8 +100,9 @@ void GLHeapDiagram::setupHeapblockGLStructures() {
                                g_vertices.size() * sizeof(HeapVertex));
 
   for (const HeapVertex& vertex : g_vertices) {
-    printf("[!] Vertex is %f, %f\n", vertex.getX(), vertex.getY());
+    printf("[!] Vertex is %lx, %lx\n", vertex.getX(), vertex.getY());
   }
+  fflush(stdout);
 
   // Create the two uniforms for the heap block shaders.
   uniform_vertex_to_screen_ =
@@ -144,7 +145,7 @@ void GLHeapDiagram::initializeGL() {
   // Load the heap history.
   std::ifstream ifs("/tmp/heap.json", std::fstream::in);
 //  heap_history_.LoadFromJSONStream(ifs);
-/*  heap_history_.recordMalloc(0x200000, 0x200);
+  heap_history_.recordMalloc(0x200000, 0x200);
   heap_history_.recordMalloc(0x200204, 0x200);
   heap_history_.recordMalloc(0x200408, 0x200);
   heap_history_.recordFree(0x200000);
@@ -153,8 +154,8 @@ void GLHeapDiagram::initializeGL() {
   heap_history_.recordMalloc(0x200200, 0x100);
   heap_history_.recordMalloc(0x200304, 0x100);
 //  heap_history_.recordFree(0x200200);
-  heap_history_.recordFree(0x200304);*/
-  heap_history_.recordMalloc(140737323938016 >> 15, 0x200);
+  heap_history_.recordFree(0x200304);
+  //heap_history_.recordMalloc(140737323938016 >> 15, 0x200);
   printf("[!] %lx fails, %lx succeeds\n", 140737323938016, 140737323938016 >> 15);
   heap_history_.setCurrentWindowToGlobal();
 
@@ -210,8 +211,8 @@ void GLHeapDiagram::updateHeapToScreenMap() {
   double y_scaling = 1.0 / static_cast<double>(current_window_height);
   double x_scaling = 1.0 / static_cast<double>(current_window_width);
 
-  heap_to_screen_matrix_.data()[0] = x_scaling;
-  heap_to_screen_matrix_.data()[3] = y_scaling;
+  heap_to_screen_matrix_.data()[0] = sqrt(x_scaling);
+  heap_to_screen_matrix_.data()[3] = sqrt(y_scaling);
 
   // Update the inverse mapping, too.
   QPolygonF target_quad;
