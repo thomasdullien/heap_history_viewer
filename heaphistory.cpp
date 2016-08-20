@@ -2,7 +2,7 @@
 #include <limits>
 
 #include "json.hpp"
-//using json = json;
+// using json = json;
 
 #include "heaphistory.h"
 
@@ -16,24 +16,107 @@ HeapWindow::HeapWindow(uint64_t min, uint64_t max, uint32_t mintick,
     : minimum_address_(min), maximum_address_(max), minimum_tick_(mintick),
       maximum_tick_(maxtick) {}
 
+// ContinousHeapWindows are used for selecting an area of the heap for displaying.
 ContinuousHeapWindow::ContinuousHeapWindow(uint64_t min, uint64_t max,
                                            uint32_t mintick, uint32_t maxtick)
     : minimum_address_(min), maximum_address_(max), minimum_tick_(mintick),
       maximum_tick_(maxtick) {}
+
+// This code is made uglier by dealing with possible integer overflows.
+void ContinuousHeapWindow::pan(double dx, double dy) {
+  uint32_t width = maximum_tick_ - minimum_tick_;
+  uint32_t center_x = minimum_tick_ + width / 2;
+  uint64_t height = maximum_address_ - minimum_address_;
+  uint64_t center_y = minimum_address_ + height / 2;
+  uint32_t pan_x = fabs(dx) * width;
+  uint64_t pan_y = fabs(dy) * height;
+
+  // Range-check if panning the center this much to the right brings it
+  // too close to the border.
+  if (dx > 0) {
+    if (pan_x > std::numeric_limits<uint64_t>::max() - maximum_tick_) {
+      center_x = std::numeric_limits<uint64_t>::max() - width / 2;
+    } else {
+      center_x = center_x + pan_x;
+    }
+  }
+  if (dx < 0) {
+    if (pan_x > minimum_tick_) {
+      center_x = width / 2;
+    } else {
+      center_x = center_x - pan_x;
+    }
+  }
+  if (dy > 0) {
+    if (pan_y > std::numeric_limits<uint64_t>::max() - maximum_address_) {
+      center_y = std::numeric_limits<uint64_t>::max() - height / 2;
+    } else {
+      center_y = center_y + pan_y;
+    }
+  }
+  if (dy < 0) {
+    if (pan_y > minimum_address_) {
+      center_y = height / 2;
+    } else {
+      center_y = center_y - pan_y;
+    }
+  }
+  minimum_tick_ = center_x - width / 2;
+  maximum_tick_ = center_x + width / 2;
+  minimum_address_ = center_y - height / 2;
+  maximum_address_ = center_y + height / 2;
+}
+
+// Zoom toward a given point on the screen. The point is given in relative
+// height / width of the current window, e.g. the center is 0.5, 0.5.
+void ContinuousHeapWindow::zoomToPoint(double dx, double dy, double how_much_x,
+                                       double how_much_y) {
+  double epsilon = 0.05;
+  double extra_height = (height() * how_much_y) - height();
+  double extra_width = (width() * how_much_x) - width();
+
+  // Make sure we move a little more toward the point than we need to keep the
+  // point constant on screen.
+  if (dx > 0.5) {
+    dx += epsilon;
+  } else {
+    dx -= epsilon;
+  }
+  if (dy > 0.5) {
+    dy += epsilon;
+  } else {
+    dy -= epsilon;
+  }
+
+  double extra_width_right = (1.0 - dx) * extra_width;
+  double extra_width_left = dx * extra_width;
+  double extra_height_top = dy * extra_height;
+  double extra_height_bottom = (1.0 - dy) * extra_height;
+
+  maximum_address_ = saturatedAdd(maximum_address_, extra_height_top,
+                                  std::numeric_limits<uint64_t>::max(), 1UL);
+  minimum_address_ = saturatedAdd(minimum_address_, -extra_height_bottom,
+                                  std::numeric_limits<uint64_t>::max() - 1, 0UL);
+  maximum_tick_ = saturatedAdd(maximum_tick_, extra_width_right,
+                               std::numeric_limits<uint32_t>::max(), 1U);
+  minimum_tick_ = saturatedAdd(minimum_tick_, -extra_width_left,
+                               std::numeric_limits<uint32_t>::max() - 1, 0U);
+}
 
 // The code for the heap history.
 HeapHistory::HeapHistory()
     : current_tick_(0), current_window_(0, 1, 0, 1),
       global_area_(std::numeric_limits<uint32_t>::max(), 0, 0, 1) {}
 
-void HeapHistory::LoadFromJSONStream(std::istream& jsondata) {
+void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
   nlohmann::json incoming_data;
   incoming_data << jsondata;
 
   uint32_t counter = 0;
-  for (const auto& json_element : incoming_data) {
+  for (const auto &json_element : incoming_data) {
     if (json_element["type"].get<std::string>() == "alloc") {
-      recordMalloc(json_element["address"].get<uint64_t>(), json_element["size"].get<uint32_t>(), 0);
+      recordMalloc(json_element["address"].get<uint64_t>(),
+                   json_element["size"].get<uint32_t>(), 0);
       std::cout << json_element << std::endl;
     } else if (json_element["type"].get<std::string>() == "free") {
       recordFree(json_element["address"].get<uint64_t>(), 0);
@@ -41,30 +124,11 @@ void HeapHistory::LoadFromJSONStream(std::istream& jsondata) {
       printf("[!] Need to parse/display events, no support yet.\n");
     }
     fflush(stdout);
-    if (counter++ > 1) break;
+    if (counter++ > 1)
+      break;
   }
   printf("heap_blocks_.size() is %d\n", heap_blocks_.size());
   fflush(stdout);
-}
-
-double HeapHistory::getXProjectionEntry() {
-  return static_cast<double>(2.0) /
-         static_cast<double>(current_window_.width());
-}
-
-double HeapHistory::getYProjectionEntry() {
-  return static_cast<double>(2.0) /
-         static_cast<double>(current_window_.height());
-}
-
-double HeapHistory::getXTranslationEntry() {
-  return static_cast<double>(1.0) -
-         (getXProjectionEntry() * current_window_.maximum_tick_);
-}
-
-double HeapHistory::getYTranslationEntry() {
-  return static_cast<double>(1.0) -
-         (getYProjectionEntry() * current_window_.maximum_address_);
 }
 
 size_t HeapHistory::getActiveBlocks(
@@ -162,7 +226,8 @@ void HeapHistory::HeapBlockToVertices(const HeapBlock &block,
   block.toVertices(current_tick_, vertices);
 }
 
-size_t HeapHistory::dumpVerticesForActiveWindow(std::vector<HeapVertex> *vertices) {
+size_t
+HeapHistory::dumpVerticesForActiveWindow(std::vector<HeapVertex> *vertices) {
   size_t active_block_count = 0;
   for (std::vector<HeapBlock>::iterator iter = heap_blocks_.begin();
        iter != heap_blocks_.end(); ++iter) {
@@ -250,48 +315,19 @@ bool HeapHistory::getBlockAt(uint64_t address, uint32_t tick, HeapBlock *result,
 // Provided a displacement (percentage of size of the current window in x and y
 // direction), pan the window accordingly.
 void HeapHistory::panCurrentWindow(double dx, double dy) {
-  current_window_.maximum_address_ += (dy * current_window_.height());
-  current_window_.minimum_address_ += (dy * current_window_.height());
-  current_window_.maximum_tick_ -= (dx * current_window_.width());
-  current_window_.minimum_tick_ -= (dx * current_window_.width());
+  current_window_.pan(dx, dy);
 }
 
 // Zoom toward a given point on the screen. The point is given in relative
 // height / width of the current window, e.g. the center is 0.5, 0.5.
 void HeapHistory::zoomToPoint(double dx, double dy, double how_much_x,
                               double how_much_y) {
-  double epsilon = 0.05;
-  double extra_height =
-      (current_window_.height() * how_much_y) - current_window_.height();
-  double extra_width =
-      (current_window_.width() * how_much_x) - current_window_.width();
-
-  // Make sure we move a little more toward the point than we need to keep the
-  // point constant on screen.
-  if (dx > 0.5) {
-    dx += epsilon;
-  } else {
-    dx -= epsilon;
-  }
-  if (dy > 0.5) {
-    dy += epsilon;
-  } else {
-    dy -= epsilon;
-  }
-
-  double extra_width_right = (1.0 - dx) * extra_width;
-  double extra_width_left = dx * extra_width;
-  double extra_height_top = dy * extra_height;
-  double extra_height_bottom = (1.0 - dy) * extra_height;
-
-  current_window_.maximum_address_ += extra_height_top;
-  current_window_.minimum_address_ -= extra_height_bottom;
-  current_window_.maximum_tick_ += extra_width_right;
-  current_window_.minimum_tick_ -= extra_width_left;
+  current_window_.zoomToPoint(dx, dy, how_much_x, how_much_y);
 }
 
-const ContinuousHeapWindow &
+/*const ContinuousHeapWindow &
 HeapHistory::getGridWindow(uint32_t number_of_lines) {
+
   // Find the first power-of-two p so that 16 * 2^p > height, and
   // 16 * 2^p2 > width. Then update the grid_window_ variable and
   // return it.
@@ -318,4 +354,5 @@ HeapHistory::getGridWindow(uint32_t number_of_lines) {
   grid_rectangle_.minimum_address_ =
       grid_rectangle_.maximum_address_ - p1 * number_of_lines;
   return grid_rectangle_;
-}
+
+}*/

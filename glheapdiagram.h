@@ -61,9 +61,7 @@ private:
   // heap to the screen space can have a degenerate matrix with a zero
   // entry. In order to prevent this, the scaling down is implemented
   // with two matrices that are applied iteratively.
-  QMatrix2x2 heap_to_4GB_matrix_;
   QMatrix2x2 heap_to_screen_matrix_;
-  QVector2D heap_to_screen_translation_;
   // Since this mapping isn't going ot the GPU, it is more practical
   // to keep it as a QTransform.
   QTransform screen_to_heap_;
@@ -75,6 +73,11 @@ private:
   // Stuff to map heap blocks to the screen.
   int uniform_vertex_to_screen_;
   int uniform_translation_part_;
+  // An ivec2 that is filled with the uint64_t of the base address of the
+  // displayed fraction of the heap.
+  int uniform_visible_heap_base_A_;
+  int uniform_visible_heap_base_B_;
+  int uniform_minimum_visible_tick_;
   QMatrix4x4 vertex_to_screen_map_;
   QVector4D translation_;
 
@@ -85,7 +88,6 @@ private:
   int uniform_grid_to_heap_map_;
   int uniform_heap_to_screen_map_;
   int uniform_grid_to_heap_translation_;
-  int uniform_heap_to_screen_translation_;
 
   // The heap history.
   HeapHistory heap_history_;

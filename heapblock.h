@@ -17,7 +17,10 @@ public:
             uint64_t address);
   // Create vertices for the block. Since the block consists of 2 triangles with
   // 3 vertices each, and since the third dimension will be set by the shader,
-  // this function will write 6 floats to output_vertices.
+  // this function will write 6 floats to output_vertices. The correction term
+  // will be subtracted from the address value before writing the vertices to
+  // align the lowest recorded allocation with uint64_t 0. This should
+  // hopefully help reduce rounding errors / issues.
   void toVertices(uint32_t max_tick, std::vector<HeapVertex>* output_vertices) const;
   // Check if a given point is inside the current block.
   bool contains(uint32_t tick, uint64_t address) {

@@ -60,8 +60,6 @@ void GLHeapDiagram::setupGridGLStructures() {
       grid_shader_->uniformLocation("heap_to_screen_map");
   uniform_grid_to_heap_translation_ =
       grid_shader_->uniformLocation("grid_to_heap_translation");
-  uniform_heap_to_screen_translation_ =
-      grid_shader_->uniformLocation("heap_to_screen_translation");
 
   grid_vao_.create();
   grid_vao_.bind();
@@ -107,9 +105,13 @@ void GLHeapDiagram::setupHeapblockGLStructures() {
 
   // Create the two uniforms for the heap block shaders.
   uniform_vertex_to_screen_ =
-      heap_shader_program_->uniformLocation("projectVertexToScreen");
-  uniform_translation_part_ =
-      heap_shader_program_->uniformLocation("translationPart");
+      heap_shader_program_->uniformLocation("scale_heap_to_screen");
+  uniform_visible_heap_base_A_ =
+      heap_shader_program_->uniformLocation("visible_heap_base_A");
+  uniform_visible_heap_base_B_ =
+      heap_shader_program_->uniformLocation("visible_heap_base_B");
+  uniform_minimum_visible_tick_ =
+      heap_shader_program_->uniformLocation("minimum_visible_tick");
 
   // Create the vertex array object.
   heap_block_vao_.create();
@@ -164,38 +166,74 @@ QSize GLHeapDiagram::minimumSizeHint() { return QSize(500, 500); }
 
 QSize GLHeapDiagram::sizeHint() { return QSize(1024, 1024); }
 
+// Calculate a mapping from the heap addresses to the screen space.
+// There are multiple complications arising from implementation details
+// in the GSLS shaders:
+//
+// The heap can be very "tall" (the y-coordinate of a block can be up to
+// 2^64), and this can lead to degenerate mapping matrices easily, and to
+// rounding errors (as float precision deteriorates rapidly in the higher
+// numbers).
+//
+// The mapping that needs to be calculated is a 2x2 diagonal matrix A and
+// a 2D vector t with the properties that:
+//    A * A * x + t is a mapping from:
+//      [current_window.minimum_tick_, current_window.maximum_tick_] x
+//      [0, current_window.maximum_address_-current_window.minimum_address]
+//      --> [0,2] x [0, 2]
+//
+// This raises three questions:
+//  Q1) Why the A*A ?
+//  Q2) Why is the first y component zero, and the second a difference?
+//  Q3) Why not project onto the unit square? [0,1]x[0,1] ?
+//
+//  A1) Since A has to be represented as floats, and very large values have
+//      to be run through the mapping, the shader applies the matrix like
+//      A * (A * x) - thus allowing a big x to counteract a small y scaling
+//      factor, and preventing the y scaling to deteriorate into "0".
+//  A2) Since floats and doubles get more imprecise as numbers get bigger,
+//      the shaders use precise uint64_t arithmetic to first translate the
+//      visible window to address zero, and then map it. This prevents the
+//      display from getting more imprecise when the displayed heap is at
+//      very high addresses.
+//  A3) The OpenGL shaders emit results in the [-1,1]x[-1,1] space, so by
+//      emitting in a square of equal size, the shader only has to translate,
+//      and not scale another time.
+//
 void GLHeapDiagram::updateHeapToScreenMap() {
-  double y_project = heap_history_.getYProjectionEntry();
-  double x_project = heap_history_.getXProjectionEntry();
-  double y_translate = heap_history_.getYTranslationEntry();
-  double x_translate = heap_history_.getXTranslationEntry();
+  uint64_t current_window_height =
+      heap_history_.getCurrentWindow().getMaximumAddress() -
+      heap_history_.getCurrentWindow().getMinimumAddress();
+  uint64_t current_window_width =
+      heap_history_.getCurrentWindow().getMaximumTick() -
+      heap_history_.getCurrentWindow().getMinimumTick();
+  double y_scaling = 1.0 / static_cast<double>(current_window_height);
+  double x_scaling = 1.0 / static_cast<double>(current_window_width);
 
-  heap_to_screen_matrix_.data()[0] = x_project;
-  heap_to_screen_matrix_.data()[3] = y_project;
-  heap_to_screen_translation_.setX(x_translate);
-  heap_to_screen_translation_.setY(y_translate);
+  heap_to_screen_matrix_.data()[0] = x_scaling;
+  heap_to_screen_matrix_.data()[3] = y_scaling;
 
   // Update the inverse mapping, too.
   QPolygonF target_quad;
   const ContinuousHeapWindow &window = heap_history_.getCurrentWindow();
-  QPointF ll(window.minimum_tick_, window.minimum_address_);
-  QPointF lr(window.maximum_tick_, window.minimum_address_);
-  QPointF ur(window.maximum_tick_, window.maximum_address_);
-  QPointF ul(window.minimum_tick_, window.maximum_address_);
+  QPointF ll(window.getMinimumTickAsDouble(), window.getMinimumAddress());
+  QPointF lr(window.getMaximumTickAsDouble(), window.getMinimumAddress());
+  QPointF ur(window.getMaximumTickAsDouble(), window.getMaximumAddressAsDouble());
+  QPointF ul(window.getMinimumTickAsDouble(), window.getMaximumAddressAsDouble());
   target_quad << ul << ur << lr << ll; // << ul << ur << lr;
 
   QTransform::squareToQuad(target_quad, screen_to_heap_);
 }
 
-void GLHeapDiagram::updateUnitSquareToHeapMap() {
+/*void GLHeapDiagram::updateUnitSquareToHeapMap() {
   QTransform grid_transform;
   QPolygonF target_quad;
   const ContinuousHeapWindow &window =
       heap_history_.getGridWindow(number_of_grid_lines_);
-  target_quad << QPointF(window.minimum_tick_, window.minimum_address_)
-              << QPointF(window.maximum_tick_, window.minimum_address_)
-              << QPointF(window.maximum_tick_, window.maximum_address_)
-              << QPointF(window.minimum_tick_, window.maximum_address_);
+  target_quad << QPointF(window.getMinimumTickAsDouble(), window.getMinimumAddress())
+              << QPointF(window.getMaximumTickAsDouble(), window.getMinimumAddress())
+              << QPointF(window.getMaximumTickAsDouble(), window.getMaximumAddressAsDouble())
+              << QPointF(window.getMinimumTickAsDouble(), window.getMaximumAddressAsDouble());
 
   // Build a mapping from the unit square grid to the current window.
   QTransform::squareToQuad(target_quad, grid_transform);
@@ -204,7 +242,7 @@ void GLHeapDiagram::updateUnitSquareToHeapMap() {
   unit_square_to_heap_matrix_.data()[3] = grid_transform.m22();
   unit_square_to_heap_translation_.setX(grid_transform.m31());
   unit_square_to_heap_translation_.setY(grid_transform.m32());
-}
+}*/
 
 void GLHeapDiagram::paintGL() {
   glClear(GL_COLOR_BUFFER_BIT);
@@ -214,26 +252,24 @@ void GLHeapDiagram::paintGL() {
 
   // Render the heap blocks.
   heap_shader_program_->bind();
-  heap_shader_program_->setUniformValue(uniform_translation_part_,
-                                        heap_to_screen_translation_);
   heap_shader_program_->setUniformValue(uniform_vertex_to_screen_,
                                         heap_to_screen_matrix_);
+
+  heap_shader_program_->setUniformValue(uniform_visible_heap_base_A_,
+    heap_history_.getCurrentWindow().getMinimumAddressLow32());
+  heap_shader_program_->setUniformValue(uniform_visible_heap_base_B_,
+    heap_history_.getCurrentWindow().getMinimumAddressHigh32());
+  heap_shader_program_->setUniformValue(uniform_minimum_visible_tick_,
+    heap_history_.getCurrentWindow().getMinimumTick());
   {
     heap_block_vao_.bind();
     glDrawArrays(GL_TRIANGLES, 0, g_vertices.size() * sizeof(HeapVertex));
-
-    printf("[!] Mapping heap vertices manually to screen space\n");
-    printf("[!] projection is %f 0, 0 %f, translation is %f %f\n", heap_to_screen_matrix_.data()[0], heap_to_screen_matrix_.data()[3],
-        heap_to_screen_translation_.x(), heap_to_screen_translation_.y());
-    for (const HeapVertex& vertex : g_vertices) {
-      float new_x = vertex.getX() * heap_to_screen_matrix_.data()[0] + heap_to_screen_translation_.x();
-      float new_y = vertex.getY() * heap_to_screen_matrix_.data()[3] + heap_to_screen_translation_.y();
-      printf("[!] %f, %f --> %f, %f\n", vertex.getX(), vertex.getY(), new_x, new_y);
-    }
     heap_block_vao_.release();
   }
   heap_shader_program_->release();
 
+  /*
+  // Render the grid.
   updateUnitSquareToHeapMap();
   grid_shader_->bind();
   grid_shader_->setUniformValue(uniform_heap_to_screen_map_,
@@ -249,7 +285,7 @@ void GLHeapDiagram::paintGL() {
     glDrawArrays(GL_LINES, 0, g_grid_vertices.size() * sizeof(HeapVertex));
     grid_vao_.release();
   }
-  grid_shader_->release();
+  grid_shader_->release();*/
 }
 
 void GLHeapDiagram::update() {

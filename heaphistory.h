@@ -1,6 +1,7 @@
 #ifndef HEAPHISTORY_H
 #define HEAPHISTORY_H
 
+#include <cmath>
 #include <cstdint>
 #include <map>
 #include <vector>
@@ -22,6 +23,24 @@ public:
   uint32_t maximum_tick_;
 };
 
+// Adds a double to a uint64_t or uint32_t, saturating the uint at max or at 0
+// (so no integer overflow). Returns 0 if no overflow would have occured, 1 if
+// an overflow has occurred, and -1 if an underflow has occured.
+template <typename T> int32_t saturatingAddition(double value, T *result) {
+  if ((value > 0) && (value > (std::numeric_limits<T>::max() - *result))) {
+    // Addition results in overflow.
+    *result = std::numeric_limits<T>::max();
+    return 1;
+  }
+  if ((value < 0) && (fabs(value) > *result)) {
+    // Addition would cause underflow.
+    *result = 0;
+    return -1;
+  }
+  *result += value;
+  return 0;
+}
+
 class ContinuousHeapWindow {
 public:
   ContinuousHeapWindow() {}
@@ -35,10 +54,59 @@ public:
     minimum_tick_ = window.minimum_tick_;
     maximum_tick_ = window.maximum_tick_;
   }
-  double minimum_address_;
-  double maximum_address_;
-  double minimum_tick_;
-  double maximum_tick_;
+  uint64_t getMinimumAddress() const { return minimum_address_; }
+  uint32_t getMinimumAddressLow32() const {
+    return static_cast<uint32_t>(minimum_address_);
+  }
+  uint32_t getMinimumAddressHigh32() const {
+    return static_cast<uint32_t>(minimum_address_ >> 32);
+  }
+  uint64_t getMaximumAddress() const { return maximum_address_; }
+  uint32_t getMinimumTick() const { return minimum_tick_; }
+  uint32_t getMaximumTick() const { return maximum_tick_; }
+  double getMinimumAddressAsDouble() const {
+    return static_cast<double>(minimum_address_);
+  }
+  double getMaximumAddressAsDouble() const {
+    return static_cast<double>(maximum_address_);
+  }
+  double getMinimumTickAsDouble() const {
+    return static_cast<double>(minimum_tick_);
+  }
+  double getMaximumTickAsDouble() const {
+    return static_cast<double>(maximum_tick_);
+  }
+
+  // This code is made uglier by dealing with possible integer overflows.
+  void pan(double dx, double dy);
+
+  template <typename T>
+  T saturatedAdd(T value, double addend, T upperlimit, T lowerlimit) {
+    if (addend > 0) {
+      if (addend > upperlimit - value) {
+        return upperlimit;
+      }
+      return value + addend;
+    }
+    if (addend < 0) {
+      if (fabs(addend) > value - lowerlimit) {
+        return lowerlimit;
+      }
+      return value - fabs(addend);
+    }
+  }
+
+  // Zoom toward a given point on the screen. The point is given in relative
+  // height / width of the current window, e.g. the center is 0.5, 0.5.
+  void zoomToPoint(double dx, double dy, double how_much_x, double how_much_y);
+
+private:
+  uint64_t minimum_address_;
+  uint64_t maximum_address_;
+  uint32_t minimum_tick_;
+  uint32_t maximum_tick_;
+  float x_shift_;
+  float y_shift_;
 };
 
 class HeapConflict {
@@ -62,7 +130,7 @@ public:
   const ContinuousHeapWindow &getGridWindow(uint32_t number_of_lines);
 
   // Input reading.
-  void LoadFromJSONStream(std::istream& jsondata);
+  void LoadFromJSONStream(std::istream &jsondata);
 
   // Attempts to find a block at a given address and tick. Currently broken,
   // hence the two implementations (slow works).
@@ -85,11 +153,6 @@ public:
   uint64_t getMaximumAddress() { return global_area_.maximum_address_; }
   uint32_t getMinimumTick() { return global_area_.minimum_tick_; }
   uint32_t getMaximumTick() { return global_area_.maximum_tick_; }
-
-  double getXProjectionEntry();
-  double getYProjectionEntry();
-  double getXTranslationEntry();
-  double getYTranslationEntry();
 
   // Functions for moving the currently visible window around.
   void panCurrentWindow(double dx, double dy);
