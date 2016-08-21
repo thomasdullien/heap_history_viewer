@@ -146,8 +146,9 @@ void GLHeapDiagram::initializeGL() {
 
   // Load the heap history.
   std::ifstream ifs("/tmp/heap.json", std::fstream::in);
- // heap_history_.LoadFromJSONStream(ifs);
+  //heap_history_.LoadFromJSONStream(ifs);
   uint64_t base = 0x100000000;
+  for (int i = 0; i < 10; ++i) {
   heap_history_.recordMalloc(0x200000+base, 0x200);
   heap_history_.recordMalloc(0x200204+base, 0x200);
   heap_history_.recordMalloc(0x200408+base, 0x200);
@@ -158,7 +159,8 @@ void GLHeapDiagram::initializeGL() {
   heap_history_.recordMalloc(0x200304+base, 0x100);
   heap_history_.recordFree(0x200200+base);
   heap_history_.recordFree(0x200304+base);
-    //heap_history_.recordMalloc(140737323938016 >> 15, 0x200);
+    }
+    //heap_history_.recordMalloc(140737323938016 >> 15, 0x200);*/
   heap_history_.setCurrentWindowToGlobal();
 
   setupHeapblockGLStructures();
@@ -314,7 +316,7 @@ void GLHeapDiagram::paintGL() {
     heap_block_vao_.release();
   }
   heap_shader_program_->release();
-
+/*
   printf("height is %lx, width is %lx\n", heap_history_.getCurrentWindow().height(), heap_history_.getCurrentWindow().width());
   printf("minimum_address is %lx, maximum_address is %lx\n", heap_history_.getCurrentWindow().getMinimumAddress(), heap_history_.getCurrentWindow().getMaximumAddress());
   for (const HeapVertex &vertex : g_vertices) {
@@ -324,7 +326,7 @@ void GLHeapDiagram::paintGL() {
            x, y);
   }
   fflush(stdout);
-
+*/
 
 
   /*

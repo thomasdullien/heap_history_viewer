@@ -4,20 +4,22 @@
 #
 #-------------------------------------------------
 
-QT       += core gui opengl
+QT       += core gui opengl testlib
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = HeapVizGL
 TEMPLATE = app
 
-SOURCES += main.cpp\
-        heapvizwindow.cpp \
+SOURCES += main.cpp \
+    heapvizwindow.cpp \
     glheapdiagram.cpp \
     heapblock.cpp \
     vertex.cpp \
     transform3d.cpp \
-    heaphistory.cpp
+    heaphistory.cpp \
+    displayheapwindow.cpp \
+    heapwindow.cpp
 
 HEADERS  += heapvizwindow.h \
     glheapdiagram.h \
@@ -25,7 +27,9 @@ HEADERS  += heapvizwindow.h \
     vertex.h \
     transform3d.h \
     heaphistory.h \
-    json.hpp
+    json.hpp \
+    displayheapwindow.h \
+    heapwindow.h
 
 FORMS    += heapvizwindow.ui
 

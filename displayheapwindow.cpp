@@ -80,12 +80,12 @@ ivec3 Sub96(ivec3 a, ivec3 b) {
   int c1 = temp_ab.x;
   ivec2 temp_a2 = ivec2(a.y, 0);
   ivec2 temp_b2 = ivec2(b.y, 0);
-  ivec2 temp_carry = ivec2(temp_ab.y, 0);
-  ivec2 temp_ab_carry = Sub64(Sub64(temp_a2, temp_b2), temp_carry);
+  ivec2 temp_borrow = ivec2(-temp_ab.y, 0);
+  ivec2 temp_ab_with_borrow = Sub64(Sub64(temp_a2, temp_b2), temp_borrow);
   // The middle int has been calculated.
-  int c2 = temp_ab_carry.x;
+  int c2 = temp_ab_with_borrow.x;
   // For the last int, we do not need to be concerned about the carry-out.
-  int c3 = a.z - b.z - temp_ab_carry.y;
+  int c3 = a.z - b.z - (-temp_ab_with_borrow.y);
   return ivec3(c1, c2, c3);
 }
 
@@ -184,7 +184,6 @@ long double DisplayHeapWindow::getXScalingHeapToScreen() const {
   long double factor =
       static_cast<long double>(1.0) / static_cast<long double>(shrinkage);
   long double result = sqrt(static_cast<long double>(factor));
-  int64_t minimum_tick = (0x0 - 0xFFFFFFFF0>>1);
   return result;
 }
 
@@ -252,10 +251,8 @@ std::pair<float, float> DisplayHeapWindow::internalMapHeapCoordinateToDisplay(
   // Lowest 4 bit represent fractional component, again.
   ivec2 minimum_visible_tick(visible_tick_base_A, visible_tick_base_B);
 
-  printf("minimum_visible_tick: %08lx %08lx\n", minimum_visible_tick.y, minimum_visible_tick.x);
   // Translate the x / tick coordinate to be aligned with 0.
   ivec2 tick_coordinate_translated = Sub64(tick, minimum_visible_tick);
-  printf("tick_coordinate_translated: %08lx %08lx\n", tick_coordinate_translated.y, tick_coordinate_translated.x);
 
   // Multiply the y coordinate with the y entry of the transformation matrix.
   // To avoid a degenerate matrix, C++ code supplies a matrix containing the
@@ -265,7 +262,6 @@ std::pair<float, float> DisplayHeapWindow::internalMapHeapCoordinateToDisplay(
                                         scale_heap_to_screen[1][1]);
   float final_y = temp_y * scale_heap_to_screen[1][1];
 
-  printf("%08lx %08lx\n", tick_coordinate_translated.y, tick_coordinate_translated.x);
   float temp_x = Multiply64BitWithFloat(tick_coordinate_translated,
                                         scale_heap_to_screen[0][0]);
   float final_x = temp_x * scale_heap_to_screen[0][0];
