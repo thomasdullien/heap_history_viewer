@@ -14,8 +14,17 @@ signals:
 public slots:
 
 private slots:
+  void TestLongDoubleTo96Bits();
+  void Test96BitFlipBits();
+  void Test96BitSubtraction();
+  void Test96BitAddition();
   void MapFromHeapToScreenMaximumPositiveSizes();
-  void MapFromHeapToScreenNegativeWindow();
+  void MapFromHeapToScreenBottomLeftWindow();
+  void MapFromHeapToScreenTopRightWindow();
+  //void MapFromHeapToScreenTopLeftWindow();
+  //void MapFromHeapToScreenBottomRightWindow();
+
+  //void TestPanning();
 };
 
 #endif // TESTDISPLAYHEAPWINDOW_H

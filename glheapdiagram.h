@@ -54,9 +54,13 @@ private:
 
   void getScaleFromHeapToScreen(double* scale_x, double* scale_y);
   void getScaleFromScreenToHeap(double* scale_x, double* scale_y);
-  void screenToHeap(double, double, uint32_t* tick, uint64_t* address);
-  void heapToScreen(uint32_t tick, uint64_t address, double*, double*);
-  // Due to limited precision of floats, a straight mapping from the
+  bool screenToHeap(double, double, uint32_t* tick, uint64_t* address);
+  //void heapToScreen(uint32_t tick, uint64_t address, double*, double*);
+
+  void setHeapBaseUniforms();
+  void setTickBaseUniforms();
+
+  // Due to limited precision of floats, a straight mapping void setTickBaseUniforms();
   // heap to the screen space can have a degenerate matrix with a zero
   // entry. In order to prevent this, the scaling down is implemented
   // with two matrices that are applied iteratively.
@@ -69,13 +73,16 @@ private:
   // Stuff to map heap blocks to the screen.
   int uniform_vertex_to_screen_;
   int uniform_translation_part_;
-  // An ivec2 that is filled with the uint64_t of the base address of the
+
+  // An ivec3 that is filled with the uint64_t of the base address of the
   // displayed fraction of the heap.
   int uniform_visible_heap_base_A_;
   int uniform_visible_heap_base_B_;
-  int uniform_minimum_visible_tick_;
-  QMatrix4x4 vertex_to_screen_map_;
-  QVector4D translation_;
+  int uniform_visible_heap_base_C_;
+
+  // The minimum tick is provided as ivec2.
+  int uniform_visible_tick_base_A_;
+  int uniform_visible_tick_base_B_;
 
   // VAO, VBO and shader for the grid.
   QOpenGLBuffer grid_vertex_buffer_;
@@ -90,6 +97,8 @@ private:
 
   // Last mouse position for dragging and selecting.
   QPoint last_mouse_position_;
+  void setupUniformsForShaders();
+  void debugDumpVerticesAndMappings();
 };
 
 #endif // GLHEAPDIAGRAM_H

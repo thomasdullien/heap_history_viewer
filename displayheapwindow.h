@@ -19,10 +19,17 @@ public:
     x = a & 0xFFFFFFFF;
     y = a >> 32;
   }
-  uint64_t getUint64() {
+  void setInt64(int64_t a) {
+    x = a & 0xFFFFFFFF;
+    y = a >> 32;
+  }
+  uint64_t getUint64() const {
     uint64_t temp = (static_cast<uint64_t>(static_cast<uint32_t>(y))) << 32;
     uint64_t result = temp | static_cast<uint64_t>(static_cast<uint32_t>(x));
     return result;
+  }
+  int64_t getInt64() const {
+    return static_cast<int64_t>(getUint64());
   }
 
   union {
@@ -47,14 +54,40 @@ public:
     z = c;
   }
 
-  uint64_t getLowUint64() {
+  uint64_t getLowUint64() const {
     return (static_cast<uint64_t>(static_cast<uint32_t>(y)) << 32) | x;
   }
   void setLowUint64(uint64_t val) {
     x = val & 0xFFFFFFFF;
     y = val >> 32;
   }
-  uint32_t getUpper32() { return z; }
+  uint32_t getUpper32() const { return z; }
+  long double getLongDouble() const {
+    long double shift32 = static_cast<long double>(0x100000000);
+    long double result = z;
+    result *= shift32;
+    long double y2 = y;
+    result += y2;
+    result *= shift32;
+    long double x2 = x;
+    result += x2;
+    return result;
+  };
+
+  void flipBit(uint32_t index) {
+    if (index >= 64) {
+      index -= 64;
+      z ^= 1 << index;
+      return;
+    }
+    if (index >= 32) {
+      index -= 32;
+      y ^= 1 << index;
+      return;
+    }
+    x ^= 1 << index;
+    return;
+  }
 
   union {
     struct {
@@ -81,6 +114,7 @@ ivec3 Add96(ivec3 a, ivec3 b);
 ivec3 Sub96(ivec3 a, ivec3 b);
 float Multiply96BitWithFloat(ivec3 a, float b);
 int TopNibble(int value);
+ivec3 LongDoubleTo96Bits(long double value);
 ivec3 Load64BitLeftShiftedBy4Into96Bit(int low, int high);
 ivec2 Load32BitLeftShiftedBy4Into64Bit(int low);
 
@@ -111,19 +145,24 @@ public:
   void pan(double dx, double dy);
   void zoomToPoint(double dx, double dy, double how_much_x, double how_much_y);
   std::pair<float, float> mapHeapCoordinateToDisplay(uint32_t tick,
-                                                     uint64_t address);
+                                                     uint64_t address) const;
   // Map screen coordinates back to the heap, returns false if the coordinate
   // does not fall into the heap.
   bool mapDisplayCoordinateToHeap(double dx, double dy, uint32_t *tick,
-                                  uint64_t *address);
+                                  uint64_t *address) const;
   void setMinimumTick(ivec2 minimum_tick);
   void setMaximumTick(ivec2 maximum_tick);
   void setMinimumAddress(ivec3 address);
   void setMaximumAddress(ivec3 address);
 
+  ivec2 getMinimumTick() const { return minimum_tick_; }
+  ivec3 getMinimumAddress() const { return minimum_address_; }
+
   long double getXScalingHeapToScreen() const;
   long double getYScalingHeapToScreen() const;
 
+  long double getHeightAsLongDouble() const;
+  long double getWidthAsLongDouble() const;
 private:
   // The internal version of the above mapping function. The code should be
   // kept in a state so that it can be cut & pasted into the GLSL files with-
@@ -131,7 +170,11 @@ private:
   std::pair<float, float> internalMapHeapCoordinateToDisplay(
       ivec3 position, int visible_heap_base_A, int visible_heap_base_B,
       int visible_heap_base_C, int visible_tick_base_A, int visible_tick_base_B,
-      float squash_x, float squash_y);
+      float squash_x, float squash_y) const;
+
+  void checkHorizontalCenter(int64_t *new_minimum_tick, int64_t *new_maximum_tick) const;
+  void checkVerticalCenter(ivec3 *new_minimum_address, ivec3 *new_maximum_address) const;
+
   ivec2 minimum_tick_;
   ivec2 maximum_tick_;
   ivec3 minimum_address_;

@@ -30,7 +30,7 @@ void HeapBlock::toVertices(uint32_t max_tick,
     lower_right_x = max_tick * 1.1;
     if (lower_right_x == max_tick) {
       // Sometimes max_tick is too small still.
-      lower_right_x = max_tick+5;
+      lower_right_x = max_tick + 5;
     }
     current_color_light = &color_allocated_light;
     current_color_dark = &color_allocated_dark;
@@ -42,27 +42,28 @@ void HeapBlock::toVertices(uint32_t max_tick,
   uint64_t upper_left_y = upper_right_y;
 
   // Create new vertices.
-
-  vertices->push_back(HeapVertex(lower_left_x, lower_left_y, *current_color_light));
-  vertices->push_back(
-      HeapVertex(lower_right_x, lower_right_y, *current_color_dark));
-  vertices->push_back(HeapVertex(upper_left_x, upper_left_y, *current_color_dark));
-  vertices->push_back(
-      HeapVertex(lower_right_x, lower_right_y, *current_color_dark));
-  vertices->push_back(
-      HeapVertex(upper_right_x, upper_right_y, *current_color_light));
-  vertices->push_back(HeapVertex(upper_left_x, upper_left_y, *current_color_dark));
-/*
-  static const QVector3D color_A(0.0, 0.0, 1.0);
-  static const QVector3D color_B(1.0, 0.0, 1.0);
-  static const QVector3D color_C(1.0, 1.0, 1.0);
-  vertices->push_back(HeapVertex(lower_left_x, lower_left_y,
-                                 color_A));
-  vertices->push_back(
-      HeapVertex(lower_right_x, lower_right_y,
-                 color_B));
-  vertices->push_back(HeapVertex(upper_left_x, upper_left_y,
-                                 color_C));*/
+  if (false) {
+    vertices->push_back(
+        HeapVertex(lower_left_x, lower_left_y, *current_color_light));
+    vertices->push_back(
+        HeapVertex(lower_right_x, lower_right_y, *current_color_dark));
+    vertices->push_back(
+        HeapVertex(upper_left_x, upper_left_y, *current_color_dark));
+    vertices->push_back(
+        HeapVertex(lower_right_x, lower_right_y, *current_color_dark));
+    vertices->push_back(
+        HeapVertex(upper_right_x, upper_right_y, *current_color_light));
+    vertices->push_back(
+        HeapVertex(upper_left_x, upper_left_y, *current_color_dark));
+  } else {
+    // In debugging mode, make sure that the colors form unit triangles.
+    static const QVector3D color_A(0.0, 0.0, 1.0);
+    static const QVector3D color_B(1.0, 0.0, 1.0);
+    static const QVector3D color_C(1.0, 1.0, 1.0);
+    vertices->push_back(HeapVertex(lower_left_x, lower_left_y, color_A));
+    vertices->push_back(HeapVertex(lower_right_x, lower_right_y, color_B));
+    vertices->push_back(HeapVertex(upper_left_x, upper_left_y, color_C));
+  }
   /*vertices->push_back(
       HeapVertex(lower_right_x, lower_right_y, color_A));
   vertices->push_back(

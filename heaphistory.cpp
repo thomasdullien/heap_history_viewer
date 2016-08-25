@@ -11,106 +11,11 @@
 HeapConflict::HeapConflict(uint32_t tick, uint64_t address, bool alloc)
     : tick_(tick), address_(address), allocation_or_free_(alloc) {}
 
-HeapWindow::HeapWindow(uint64_t min, uint64_t max, uint32_t mintick,
-                       uint32_t maxtick)
-    : minimum_address_(min), maximum_address_(max), minimum_tick_(mintick),
-      maximum_tick_(maxtick) {
-  printf("huh?\n");
-}
-
-// ContinousHeapWindows are used for selecting an area of the heap for displaying.
-ContinuousHeapWindow::ContinuousHeapWindow(uint64_t min, uint64_t max,
-                                           uint32_t mintick, uint32_t maxtick)
-    : minimum_address_(min), maximum_address_(max), minimum_tick_(mintick),
-      maximum_tick_(maxtick) {}
-
-// This code is made uglier by dealing with possible integer overflows.
-void ContinuousHeapWindow::pan(double dx, double dy) {
-  uint32_t width = maximum_tick_ - minimum_tick_;
-  uint32_t center_x = minimum_tick_ + width / 2;
-  uint64_t height = maximum_address_ - minimum_address_;
-  uint64_t center_y = minimum_address_ + height / 2;
-  uint32_t pan_x = fabs(dx) * width;
-  uint64_t pan_y = fabs(dy) * height;
-
-  // Range-check if panning the center this much to the right brings it
-  // too close to the border.
-  if (dx > 0) {
-    if (pan_x > std::numeric_limits<uint64_t>::max() - maximum_tick_) {
-      center_x = std::numeric_limits<uint64_t>::max() - width / 2;
-    } else {
-      center_x = center_x + pan_x;
-    }
-  }
-  if (dx < 0) {
-    if (pan_x > minimum_tick_) {
-      center_x = width / 2;
-    } else {
-      center_x = center_x - pan_x;
-    }
-  }
-  if (dy > 0) {
-    if (pan_y > std::numeric_limits<uint64_t>::max() - maximum_address_) {
-      center_y = std::numeric_limits<uint64_t>::max() - height / 2;
-    } else {
-      center_y = center_y + pan_y;
-    }
-  }
-  if (dy < 0) {
-    if (pan_y > minimum_address_) {
-      center_y = height / 2;
-    } else {
-      center_y = center_y - pan_y;
-    }
-  }
-  minimum_tick_ = center_x - width / 2;
-  maximum_tick_ = center_x + width / 2;
-  minimum_address_ = center_y - height / 2;
-  maximum_address_ = center_y + height / 2;
-}
-
-// Zoom toward a given point on the screen. The point is given in relative
-// height / width of the current window, e.g. the center is 0.5, 0.5.
-void ContinuousHeapWindow::zoomToPoint(double dx, double dy, double how_much_x,
-                                       double how_much_y) {
-  double epsilon = 0.05;
-  double extra_height = (heightAsDouble() * how_much_y) - heightAsDouble();
-  double extra_width = (widthAsDouble() * how_much_x) - widthAsDouble();
-
-  // Make sure we move a little more toward the point than we need to keep the
-  // point constant on screen.
-  if (dx > 0.5) {
-    dx += epsilon;
-  } else {
-    dx -= epsilon;
-  }
-  if (dy > 0.5) {
-    dy += epsilon;
-  } else {
-    dy -= epsilon;
-  }
-
-  double extra_width_right = (1.0 - dx) * extra_width;
-  double extra_width_left = dx * extra_width;
-  double extra_height_top = dy * extra_height;
-  double extra_height_bottom = (1.0 - dy) * extra_height;
-
-  maximum_address_ = saturatedAdd(maximum_address_, extra_height_top,
-                                  std::numeric_limits<uint64_t>::max(), 1UL);
-  minimum_address_ = saturatedAdd(minimum_address_, -extra_height_bottom,
-                                  std::numeric_limits<uint64_t>::max() - 1, 0UL);
-  maximum_tick_ = saturatedAdd(maximum_tick_, extra_width_right,
-                               std::numeric_limits<uint32_t>::max(), 1U);
-  minimum_tick_ = saturatedAdd(minimum_tick_, -extra_width_left,
-                               std::numeric_limits<uint32_t>::max() - 1, 0U);
-}
 
 // The code for the heap history.
 HeapHistory::HeapHistory()
-    : current_tick_(0), current_window_(0, 1, 0, 1),
+    : current_tick_(0),
       global_area_(std::numeric_limits<uint64_t>::max(), 0, 0, 1) {
-
-
 }
 
 void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {

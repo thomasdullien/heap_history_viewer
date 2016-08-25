@@ -2,9 +2,14 @@
 #include "heapwindow.h"
 #include "displayheapwindow.h"
 
+// =========================================================================
+// Everything below should be valid C++ and also valid GLSL! This code is
+// shared between displayheapwindow.cpp and simple.vert, so make sure it
+// always stays in synch!!
+// =========================================================================
+
 // Emulates uint64_t/int64 addition using vectors of integers. Uses carry
 // extraction code from Hackers Delight 2-16.
-//
 // Function must be valid C++ and valid GLSL!
 ivec2 Add64(ivec2 a, ivec2 b) {
   int sum_lower_word = a.x + b.x;
@@ -127,8 +132,34 @@ ivec2 Load32BitLeftShiftedBy4Into64Bit(int low) {
   int c2 = TopNibble(low);
   return ivec2(c1, c2);
 }
+// =========================================================================
+// End of valid C++ and valid GLSL part.
+// =========================================================================
 
-DisplayHeapWindow::DisplayHeapWindow() {}
+ivec3 LongDoubleTo96Bits(long double value) {
+  bool negative = (value < 0);
+  long double absolute = fabs(value);
+  uint32_t highest_bit = log2(absolute);
+  ivec3 result;
+
+  // Find the biggest power-of-two smaller than the value.
+  for (int32_t current_bit = highest_bit; current_bit >= 0; --current_bit) {
+    long double current_exponential = exp2(current_bit);
+    if (absolute >= current_exponential) {
+      absolute -= current_exponential;
+      result.flipBit(current_bit);
+    }
+  }
+  if (negative) {
+    ivec3 zero;
+    return Sub96(zero, result);
+  }
+  return result;
+}
+
+DisplayHeapWindow::DisplayHeapWindow() {
+
+}
 
 DisplayHeapWindow::DisplayHeapWindow(const ivec2 &minimum_tick,
                                      const ivec2 &maximum_tick,
@@ -151,16 +182,127 @@ void DisplayHeapWindow::reset(const HeapWindow &global_window) {
       global_window.minimum_address_ >> 32);
 }
 
-void DisplayHeapWindow::pan(double dx, double dy) {}
+void DisplayHeapWindow::checkHorizontalCenter(int64_t *new_minimum_tick,
+                                              int64_t *new_maximum_tick) const {
+  int64_t width = *new_maximum_tick - *new_minimum_tick;
+  int64_t half_width = width / 2;
+
+  *new_maximum_tick = std::min(
+      *new_maximum_tick, static_cast<int64_t>(0xFFFFFFFFFUL) + half_width);
+  *new_minimum_tick = std::max(*new_minimum_tick, -half_width);
+}
+
+void DisplayHeapWindow::checkVerticalCenter(ivec3 *new_minimum_address,
+                                            ivec3 *new_maximum_address) const {
+  ivec3 height_96 = Sub96(*new_maximum_address, *new_minimum_address);
+  long double height = height_96.getLongDouble();
+  long double half_height = height / 2;
+  ivec3 half_height_96 = LongDoubleTo96Bits(half_height);
+  ivec3 vertical_center = Add96(*new_minimum_address, half_height_96);
+
+  // The vertical center should not fall below zero.
+  if (vertical_center.z < 0) {
+    *new_minimum_address = LongDoubleTo96Bits(-half_height);
+    *new_maximum_address = LongDoubleTo96Bits(half_height);
+  } else if (vertical_center.z > 0x17) {
+    ivec3 maximal_vertical_center(0, 0, 0x17);
+    *new_maximum_address = Add96(maximal_vertical_center, half_height_96);
+    *new_minimum_address = Sub96(maximal_vertical_center, half_height_96);
+  }
+}
+
+void DisplayHeapWindow::pan(double dx, double dy) {
+  // Calculate the height and width of the window as long doubles.
+  long double height = getHeightAsLongDouble();
+  long double width = getWidthAsLongDouble();
+  long double pan_x = dx * width;
+  long double pan_y = dy * height;
+  int64_t new_maximum_tick = maximum_tick_.getInt64() + pan_x;
+  int64_t new_minimum_tick = minimum_tick_.getInt64() + pan_x;
+  ivec3 pan_y_96 = LongDoubleTo96Bits(pan_y);
+  ivec3 new_maximum_address = Add96(maximum_address_, pan_y_96);
+  ivec3 new_minimum_address = Add96(minimum_address_, pan_y_96);
+  // Ensure that the center of the screen definitely stays in bounds.
+  // Horizontal dimension.
+  checkHorizontalCenter(&new_minimum_tick, &new_maximum_tick);
+  // Vertical dimension.
+  checkVerticalCenter(&new_minimum_address, &new_maximum_address);
+
+  maximum_tick_.setInt64(new_maximum_tick);
+  minimum_tick_.setInt64(new_minimum_tick);
+  maximum_address_ = new_maximum_address;
+  minimum_address_ = new_minimum_address;
+}
 
 void DisplayHeapWindow::zoomToPoint(double dx, double dy, double how_much_x,
-                                    double how_much_y) {}
+                                    double how_much_y) {
+  long double epsilon = 0.05;
+  long double height = getHeightAsLongDouble();
+  long double width = getWidthAsLongDouble();
+  long double extra_height = (height * how_much_y) - height;
+  double extra_width = (width * how_much_x) - width;
+
+  // Make sure we move a little more toward the point than we need to keep the
+  // point constant on screen.
+  if (dx > 0.5) {
+    dx += epsilon;
+  } else {
+    dx -= epsilon;
+  }
+  if (dy > 0.5) {
+    dy += epsilon;
+  } else {
+    dy -= epsilon;
+  }
+
+  long double extra_width_right = (1.0 - dx) * extra_width;
+  long double extra_width_left = dx * extra_width;
+  long double extra_height_top = dy * extra_height;
+  long double extra_height_bottom = (1.0 - dy) * extra_height;
+
+  ivec3 new_maximum_address =
+      Add96(maximum_address_, LongDoubleTo96Bits(extra_height_top));
+  ivec3 new_minimum_address =
+      Add96(minimum_address_, LongDoubleTo96Bits(extra_height_bottom));
+  int64_t new_minimum_tick = minimum_tick_.getInt64() - extra_width_left;
+  int64_t new_maximum_tick = maximum_tick_.getInt64() + extra_width_right;
+
+  // Now ensure that the center is not outside of bounds.
+  checkHorizontalCenter(&new_minimum_tick, &new_maximum_tick);
+  checkVerticalCenter(&new_minimum_address, &new_maximum_address);
+
+  maximum_tick_.setInt64(new_maximum_tick);
+  minimum_tick_.setInt64(new_minimum_tick);
+  maximum_address_ = new_maximum_address;
+  minimum_address_ = new_minimum_address;
+}
 
 // Map screen coordinates back to the heap, returns false if the coordinate
 // can't fall into the heap because it has a negative component.
 bool DisplayHeapWindow::mapDisplayCoordinateToHeap(double dx, double dy,
                                                    uint32_t *tick,
-                                                   uint64_t *address) {}
+                                                   uint64_t *address) const {
+  long double height = getHeightAsLongDouble();
+  long double width = getWidthAsLongDouble();
+  long double relative_x = dx * width;
+  long double relative_y = dy * height;
+
+  ivec3 tentative_address =
+      Add96(LongDoubleTo96Bits(relative_y), minimum_address_);
+  int64_t tentative_tick = relative_x + minimum_tick_.getInt64();
+
+  // Check if the numbers are in bounds.
+  if ((tentative_tick < 0) || (tentative_tick > 0xFFFFFFFFFUL) ||
+      (tentative_address.z > 0xF) || (tentative_address.z < 0)) {
+    return false;
+  }
+  // Return the values.
+  uint64_t final_address = tentative_address.getLowUint64() >> 4;
+  final_address |= tentative_address.z >> 4;
+  *address = final_address;
+  *tick = tentative_tick;
+  return true;
+}
 
 void DisplayHeapWindow::setMinimumTick(ivec2 minimum_tick) {
   minimum_tick_ = minimum_tick;
@@ -211,8 +353,20 @@ long double DisplayHeapWindow::getYScalingHeapToScreen() const {
   return result;
 }
 
+long double DisplayHeapWindow::getHeightAsLongDouble() const {
+  long double shift32 = static_cast<long double>(0x100000000);
+  ivec3 height = Sub96(maximum_address_, minimum_address_);
+  return height.getLongDouble();
+}
+
+long double DisplayHeapWindow::getWidthAsLongDouble() const {
+  long double result = static_cast<long double>(maximum_tick_.getUint64() -
+                                                minimum_tick_.getUint64());
+  return result;
+}
+
 std::pair<float, float>
-DisplayHeapWindow::mapHeapCoordinateToDisplay(uint32_t tick, uint64_t address) {
+DisplayHeapWindow::mapHeapCoordinateToDisplay(uint32_t tick, uint64_t address) const {
   ivec3 position(tick, address & 0xFFFFFFFF, address >> 32);
 
   return internalMapHeapCoordinateToDisplay(
@@ -227,11 +381,13 @@ DisplayHeapWindow::mapHeapCoordinateToDisplay(uint32_t tick, uint64_t address) {
 std::pair<float, float> DisplayHeapWindow::internalMapHeapCoordinateToDisplay(
     ivec3 position, int visible_heap_base_A, int visible_heap_base_B,
     int visible_heap_base_C, int visible_tick_base_A, int visible_tick_base_B,
-    float scale_heap_x, float scale_heap_y) {
+    float scale_heap_x, float scale_heap_y) const {
   float scale_heap_to_screen[2][2] = {{scale_heap_x, 0.0}, {0.0, scale_heap_y}};
 
   // =========================================================================
-  // Everything below should be valid C++ and also valid GLSL!
+  // Everything below should be valid C++ and also valid GLSL! This code is
+  // shared between displayheapwindow.cpp and simple.vert, so make sure it
+  // always stays in synch!!
   // =========================================================================
   //
   // Read the X (tick) and Y (address) coordinate of the current point.
@@ -249,7 +405,7 @@ std::pair<float, float> DisplayHeapWindow::internalMapHeapCoordinateToDisplay(
   ivec3 address_coordinate_translated = Sub96(address, heap_base);
 
   // Lowest 4 bit represent fractional component, again.
-  ivec2 minimum_visible_tick(visible_tick_base_A, visible_tick_base_B);
+  ivec2 minimum_visible_tick = ivec2(visible_tick_base_A, visible_tick_base_B);
 
   // Translate the x / tick coordinate to be aligned with 0.
   ivec2 tick_coordinate_translated = Sub64(tick, minimum_visible_tick);

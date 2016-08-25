@@ -8,108 +8,10 @@
 
 #include <QVector3D>
 
+#include "displayheapwindow.h"
 #include "heapblock.h"
+#include "heapwindow.h"
 #include "vertex.h"
-
-class HeapWindow {
-public:
-  HeapWindow(uint64_t min, uint64_t max, uint32_t mintick, uint32_t maxtick);
-  uint64_t height() { return maximum_address_ - minimum_address_; }
-  uint32_t width() { return maximum_tick_ - minimum_tick_; }
-  void reset(const HeapWindow &window) { *this = window; }
-  uint64_t minimum_address_;
-  uint64_t maximum_address_;
-  uint32_t minimum_tick_;
-  uint32_t maximum_tick_;
-};
-
-// Adds a double to a uint64_t or uint32_t, saturating the uint at max or at 0
-// (so no integer overflow). Returns 0 if no overflow would have occured, 1 if
-// an overflow has occurred, and -1 if an underflow has occured.
-template <typename T> int32_t saturatingAddition(double value, T *result) {
-  if ((value > 0) && (value > (std::numeric_limits<T>::max() - *result))) {
-    // Addition results in overflow.
-    *result = std::numeric_limits<T>::max();
-    return 1;
-  }
-  if ((value < 0) && (fabs(value) > *result)) {
-    // Addition would cause underflow.
-    *result = 0;
-    return -1;
-  }
-  *result += value;
-  return 0;
-}
-
-class ContinuousHeapWindow {
-public:
-  ContinuousHeapWindow() {}
-  ContinuousHeapWindow(uint64_t min, uint64_t max, uint32_t mintick,
-                       uint32_t maxtick);
-  double heightAsDouble() const { return maximum_address_ - minimum_address_; }
-  double widthAsDouble() const { return maximum_tick_ - minimum_tick_; }
-  uint64_t height() const { return maximum_address_ - minimum_address_; }
-  uint32_t width() const { return maximum_tick_ - minimum_tick_; }
-  void reset(const HeapWindow &window) {
-    minimum_address_ = window.minimum_address_;
-    maximum_address_ = window.maximum_address_;
-    minimum_tick_ = window.minimum_tick_;
-    maximum_tick_ = window.maximum_tick_;
-  }
-  uint64_t getMinimumAddress() const { return minimum_address_; }
-  uint32_t getMinimumAddressLow32() const {
-    return static_cast<uint32_t>(minimum_address_);
-  }
-  uint32_t getMinimumAddressHigh32() const {
-    return static_cast<uint32_t>(minimum_address_ >> 32);
-  }
-  uint64_t getMaximumAddress() const { return maximum_address_; }
-  uint32_t getMinimumTick() const { return minimum_tick_; }
-  uint32_t getMaximumTick() const { return maximum_tick_; }
-  double getMinimumAddressAsDouble() const {
-    return static_cast<double>(minimum_address_);
-  }
-  double getMaximumAddressAsDouble() const {
-    return static_cast<double>(maximum_address_);
-  }
-  double getMinimumTickAsDouble() const {
-    return static_cast<double>(minimum_tick_);
-  }
-  double getMaximumTickAsDouble() const {
-    return static_cast<double>(maximum_tick_);
-  }
-
-  // This code is made uglier by dealing with possible integer overflows.
-  void pan(double dx, double dy);
-
-  template <typename T>
-  T saturatedAdd(T value, double addend, T upperlimit, T lowerlimit) {
-    if (addend > 0) {
-      if (addend > upperlimit - value) {
-        return upperlimit;
-      }
-      return value + addend;
-    }
-    if (addend < 0) {
-      if (fabs(addend) > value - lowerlimit) {
-        return lowerlimit;
-      }
-      return value - fabs(addend);
-    }
-  }
-
-  // Zoom toward a given point on the screen. The point is given in relative
-  // height / width of the current window, e.g. the center is 0.5, 0.5.
-  void zoomToPoint(double dx, double dy, double how_much_x, double how_much_y);
-
-private:
-  uint64_t minimum_address_;
-  uint64_t maximum_address_;
-  uint32_t minimum_tick_;
-  uint32_t maximum_tick_;
-  float x_shift_;
-  float y_shift_;
-};
 
 class HeapConflict {
 public:
@@ -126,10 +28,10 @@ public:
   getActiveBlocks(std::vector<std::vector<HeapBlock>::iterator> *active_blocks);
   void setCurrentWindow(const HeapWindow &new_window);
   void setCurrentWindowToGlobal() { current_window_.reset(global_area_); }
-  const ContinuousHeapWindow &getCurrentWindow() const {
+
+  const DisplayHeapWindow &getCurrentWindow() const {
     return current_window_;
   }
-  const ContinuousHeapWindow &getGridWindow(uint32_t number_of_lines);
 
   // Input reading.
   void LoadFromJSONStream(std::istream &jsondata);
@@ -177,9 +79,7 @@ private:
   // Running counter to keep track of heap events.
   uint32_t current_tick_;
   // The currently active (visible, to-be-displayed) part of the heap history.
-  ContinuousHeapWindow current_window_;
-  // The rectangle for the grid drawing.
-  ContinuousHeapWindow grid_rectangle_;
+  DisplayHeapWindow current_window_;
 
   // The global size of all heap events.
   HeapWindow global_area_;
