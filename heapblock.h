@@ -24,6 +24,7 @@ public:
   void toVertices(uint32_t max_tick, std::vector<HeapVertex>* output_vertices) const;
   // Check if a given point is inside the current block.
   bool contains(uint32_t tick, uint64_t address) {
+
     return (tick >= start_tick_) && (tick <= end_tick_) &&
            (address >= address_) && (address <= address_ + size_);
   }

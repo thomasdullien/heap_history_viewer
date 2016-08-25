@@ -49,8 +49,14 @@ ivec2 Sub64(ivec2 a, ivec2 b) {
   return result;
 }
 
-// Function must be valid C++ and valid GLSL!
+/// Function must be valid C++ and valid GLSL!
 float Multiply64BitWithFloat(ivec2 a, float b) {
+  bool is_negative = false;
+  if ((a.y & 0x80000000) != 0) {
+    is_negative = true;
+    ivec2 zero = ivec2(0, 0);
+    a = Sub64(zero, a);
+  }
   float a0 = float(a.x & 0xFFFF);
   float a1 = float((a.x & 0xFFFF0000) >> 16);
   float a2 = float(a.y & 0xFFFF);
@@ -62,6 +68,9 @@ float Multiply64BitWithFloat(ivec2 a, float b) {
   result = result + a1 * b * left_shift_16f;
   result = result + a2 * b * left_shift_32f;
   result = result + a3 * b * left_shift_48f;
+  if (is_negative) {
+    result = result * (-1.0);
+  }
   return result;
 }
 
@@ -105,6 +114,14 @@ ivec3 Sub96(ivec3 a, ivec3 b) {
 
 // Function must be valid C++ and valid GLSL!
 float Multiply96BitWithFloat(ivec3 a, float b) {
+  // First check if the value-to-be-multiplied is negative.
+  bool is_negative = false;
+  if ((a.z & 0x80000000) != 0) {
+    is_negative = true;
+    ivec3 zero = ivec3(0, 0, 0);
+    // Turn the number positive.
+    a = Sub96(zero, a);
+  }
   float a0 = float(a.x & 0xFFFF);
   float a1 = float((a.x & 0xFFFF0000) >> 16);
   float a2 = float(a.y & 0xFFFF);
@@ -122,6 +139,9 @@ float Multiply96BitWithFloat(ivec3 a, float b) {
   result = result + a3 * b * left_shift_48f;
   result = result + a4 * b * left_shift_64f;
   result = result + a5 * b * left_shift_80f;
+  if (is_negative) {
+    result = result * (-1.0);
+  }
   return result;
 }
 
@@ -206,10 +226,11 @@ void main(void)
   gl_Position = vec4(final_x, final_y, 0.0, 1.0);
   // For debugging, uncomment the following line.
   //gl_Position = vec4(color.r, color.g, 0.0, 1.0);
-//  vColor = IntToColor(FloatToInt(scale_heap_to_screen[1][1] * 255 * 255 * 255));
-  if (scale_heap_to_screen[1][1] > 0.1051) {
-      vColor = vec4(1.0, 0.0, 0.0, 1.0);
-  } else {
-      vColor = vec4(0.0, 1.0, 0.0, 1.0);
-  }
+  //  vColor = IntToColor(FloatToInt(scale_heap_to_screen[1][1] * 255 * 255 * 255));
+  //if (scale_heap_to_screen[1][1] > 0.1051) {
+  //    vColor = vec4(1.0, 0.0, 0.0, 1.0);
+  //} else {
+  //    vColor = vec4(0.0, 1.0, 0.0, 1.0);
+  //}
+  vColor = vec4(color, 1.0);
 }

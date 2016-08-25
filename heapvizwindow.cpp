@@ -31,3 +31,8 @@ void HeapVizWindow::blockClicked(bool b, HeapBlock block) {
   }
   statusBar()->showMessage(buffer);
 }
+
+void HeapVizWindow::showMessage(std::string message) {
+  QString message_to_show(message.c_str());
+  statusBar()->showMessage(message_to_show);
+}

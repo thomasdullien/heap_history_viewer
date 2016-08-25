@@ -31,6 +31,15 @@ public:
   int64_t getInt64() const {
     return static_cast<int64_t>(getUint64());
   }
+  void flipBit(uint32_t index) {
+    if (index >= 32) {
+      index -= 32;
+      y ^= 1 << index;
+      return;
+    }
+    x ^= 1 << index;
+    return;
+  }
 
   union {
     struct {
@@ -172,7 +181,7 @@ private:
       int visible_heap_base_C, int visible_tick_base_A, int visible_tick_base_B,
       float squash_x, float squash_y) const;
 
-  void checkHorizontalCenter(int64_t *new_minimum_tick, int64_t *new_maximum_tick) const;
+  void checkHorizontalCenter(ivec2 *new_minimum_tick, ivec2 *new_maximum_tick) const;
   void checkVerticalCenter(ivec3 *new_minimum_address, ivec3 *new_maximum_address) const;
 
   ivec2 minimum_tick_;

@@ -94,6 +94,7 @@
    <container>1</container>
    <slots>
     <signal>blockClicked(bool,HeapBlock)</signal>
+    <signal>showMessage(std::string)</signal>
     <slot>setZRotation()</slot>
     <slot>setYRotation()</slot>
     <slot>setXRotation()</slot>
@@ -118,8 +119,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>heap_diagram</sender>
+   <signal>showMessage(std::string)</signal>
+   <receiver>HeapVizWindow</receiver>
+   <slot>showMessage(std::string)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>53</x>
+     <y>218</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-5</x>
+     <y>176</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>blockClicked(bool,HeapBlock)</slot>
+  <slot>showMessage(std::string)</slot>
  </slots>
 </ui>

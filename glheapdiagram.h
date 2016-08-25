@@ -25,6 +25,7 @@ public:
 signals:
   void frameSwapped();
   void blockClicked(bool, HeapBlock);
+  void showMessage(std::string);
 
 public slots:
 

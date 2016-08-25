@@ -23,6 +23,7 @@ protected:
 
 public slots:
   void blockClicked(bool, HeapBlock);
+  void showMessage(std::string);
 
 protected slots:
   void update();

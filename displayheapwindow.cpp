@@ -42,6 +42,12 @@ ivec2 Sub64(ivec2 a, ivec2 b) {
 
 // Function must be valid C++ and valid GLSL!
 float Multiply64BitWithFloat(ivec2 a, float b) {
+  bool is_negative = false;
+  if ((a.y & 0x80000000) != 0) {
+    is_negative = true;
+    ivec2 zero = ivec2(0, 0);
+    a = Sub64(zero, a);
+  }
   float a0 = float(a.x & 0xFFFF);
   float a1 = float((a.x & 0xFFFF0000) >> 16);
   float a2 = float(a.y & 0xFFFF);
@@ -53,6 +59,9 @@ float Multiply64BitWithFloat(ivec2 a, float b) {
   result = result + a1 * b * left_shift_16f;
   result = result + a2 * b * left_shift_32f;
   result = result + a3 * b * left_shift_48f;
+  if (is_negative) {
+    result = result * (-1.0);
+  }
   return result;
 }
 
@@ -96,6 +105,14 @@ ivec3 Sub96(ivec3 a, ivec3 b) {
 
 // Function must be valid C++ and valid GLSL!
 float Multiply96BitWithFloat(ivec3 a, float b) {
+  // First check if the value-to-be-multiplied is negative.
+  bool is_negative = false;
+  if ((a.z & 0x80000000) != 0) {
+    is_negative = true;
+    ivec3 zero = ivec3(0, 0, 0);
+    // Turn the number positive.
+    a = Sub96(zero, a);
+  }
   float a0 = float(a.x & 0xFFFF);
   float a1 = float((a.x & 0xFFFF0000) >> 16);
   float a2 = float(a.y & 0xFFFF);
@@ -113,6 +130,9 @@ float Multiply96BitWithFloat(ivec3 a, float b) {
   result = result + a3 * b * left_shift_48f;
   result = result + a4 * b * left_shift_64f;
   result = result + a5 * b * left_shift_80f;
+  if (is_negative) {
+    result = result * (-1.0);
+  }
   return result;
 }
 
@@ -135,6 +155,27 @@ ivec2 Load32BitLeftShiftedBy4Into64Bit(int low) {
 // =========================================================================
 // End of valid C++ and valid GLSL part.
 // =========================================================================
+
+ivec2 LongDoubleTo64Bits(long double value) {
+  bool negative = (value < 0);
+  long double absolute = fabs(value);
+  uint32_t highest_bit = log2(absolute);
+  ivec2 result;
+
+  // Find the biggest power-of-two smaller than the value.
+  for (int32_t current_bit = highest_bit; current_bit >= 0; --current_bit) {
+    long double current_exponential = exp2(current_bit);
+    if (absolute >= current_exponential) {
+      absolute -= current_exponential;
+      result.flipBit(current_bit);
+    }
+  }
+  if (negative) {
+    ivec2 zero;
+    return Sub64(zero, result);
+  }
+  return result;
+}
 
 ivec3 LongDoubleTo96Bits(long double value) {
   bool negative = (value < 0);
@@ -182,14 +223,23 @@ void DisplayHeapWindow::reset(const HeapWindow &global_window) {
       global_window.minimum_address_ >> 32);
 }
 
-void DisplayHeapWindow::checkHorizontalCenter(int64_t *new_minimum_tick,
-                                              int64_t *new_maximum_tick) const {
-  int64_t width = *new_maximum_tick - *new_minimum_tick;
-  int64_t half_width = width / 2;
+void DisplayHeapWindow::checkHorizontalCenter(ivec2 *new_minimum_tick,
+                                              ivec2 *new_maximum_tick) const {
+  ivec2 width_64 = Sub64(*new_maximum_tick, *new_minimum_tick);
+  long double width = width_64.getUint64();
+  long double half_width = width / 2;
+  ivec2 half_width_64 = LongDoubleTo64Bits(half_width);
+  ivec2 horizontal_center = Add64(*new_minimum_tick, half_width_64);
 
-  *new_maximum_tick = std::min(
-      *new_maximum_tick, static_cast<int64_t>(0xFFFFFFFFFUL) + half_width);
-  *new_minimum_tick = std::max(*new_minimum_tick, -half_width);
+  // The horizontal center should not fall below zero.
+  if (horizontal_center.y < 0) {
+    *new_minimum_tick = LongDoubleTo64Bits(-half_width);
+    *new_maximum_tick = LongDoubleTo64Bits(half_width);
+  } else if (horizontal_center.y > 0x17) {
+    ivec2 maximal_horizontal_center(0, 0x17);
+    *new_maximum_tick = Add64(maximal_horizontal_center, half_width_64);
+    *new_minimum_tick = Sub64(maximal_horizontal_center, half_width_64);
+  }
 }
 
 void DisplayHeapWindow::checkVerticalCenter(ivec3 *new_minimum_address,
@@ -215,10 +265,13 @@ void DisplayHeapWindow::pan(double dx, double dy) {
   // Calculate the height and width of the window as long doubles.
   long double height = getHeightAsLongDouble();
   long double width = getWidthAsLongDouble();
-  long double pan_x = dx * width;
+  printf("Pan %f %f\n", dx, dy);
+  long double pan_x = -dx * width;
   long double pan_y = dy * height;
-  int64_t new_maximum_tick = maximum_tick_.getInt64() + pan_x;
-  int64_t new_minimum_tick = minimum_tick_.getInt64() + pan_x;
+  printf("pan %f units and %f units\n", pan_x, pan_y);
+  ivec2 pan_x_64 = LongDoubleTo64Bits(pan_x);
+  ivec2 new_minimum_tick = Add64(minimum_tick_, pan_x_64);
+  ivec2 new_maximum_tick = Add64(maximum_tick_, pan_x_64);
   ivec3 pan_y_96 = LongDoubleTo96Bits(pan_y);
   ivec3 new_maximum_address = Add96(maximum_address_, pan_y_96);
   ivec3 new_minimum_address = Add96(minimum_address_, pan_y_96);
@@ -228,8 +281,8 @@ void DisplayHeapWindow::pan(double dx, double dy) {
   // Vertical dimension.
   checkVerticalCenter(&new_minimum_address, &new_maximum_address);
 
-  maximum_tick_.setInt64(new_maximum_tick);
-  minimum_tick_.setInt64(new_minimum_tick);
+  maximum_tick_ = new_maximum_tick;
+  minimum_tick_= new_minimum_tick;
   maximum_address_ = new_maximum_address;
   minimum_address_ = new_minimum_address;
 }
@@ -263,16 +316,16 @@ void DisplayHeapWindow::zoomToPoint(double dx, double dy, double how_much_x,
   ivec3 new_maximum_address =
       Add96(maximum_address_, LongDoubleTo96Bits(extra_height_top));
   ivec3 new_minimum_address =
-      Add96(minimum_address_, LongDoubleTo96Bits(extra_height_bottom));
-  int64_t new_minimum_tick = minimum_tick_.getInt64() - extra_width_left;
-  int64_t new_maximum_tick = maximum_tick_.getInt64() + extra_width_right;
+      Sub96(minimum_address_, LongDoubleTo96Bits(extra_height_bottom));
+  ivec2 new_minimum_tick = Sub64(minimum_tick_, LongDoubleTo64Bits(extra_width_left));
+  ivec2 new_maximum_tick = Add64(maximum_tick_, LongDoubleTo64Bits(extra_width_right));
 
   // Now ensure that the center is not outside of bounds.
   checkHorizontalCenter(&new_minimum_tick, &new_maximum_tick);
   checkVerticalCenter(&new_minimum_address, &new_maximum_address);
 
-  maximum_tick_.setInt64(new_maximum_tick);
-  minimum_tick_.setInt64(new_minimum_tick);
+  maximum_tick_ = new_maximum_tick;
+  minimum_tick_ = new_minimum_tick;
   maximum_address_ = new_maximum_address;
   minimum_address_ = new_minimum_address;
 }
@@ -285,7 +338,7 @@ bool DisplayHeapWindow::mapDisplayCoordinateToHeap(double dx, double dy,
   long double height = getHeightAsLongDouble();
   long double width = getWidthAsLongDouble();
   long double relative_x = dx * width;
-  long double relative_y = dy * height;
+  long double relative_y = (1.0-dy) * height;
 
   ivec3 tentative_address =
       Add96(LongDoubleTo96Bits(relative_y), minimum_address_);
@@ -300,7 +353,7 @@ bool DisplayHeapWindow::mapDisplayCoordinateToHeap(double dx, double dy,
   uint64_t final_address = tentative_address.getLowUint64() >> 4;
   final_address |= tentative_address.z >> 4;
   *address = final_address;
-  *tick = tentative_tick;
+  *tick = tentative_tick >> 4;
   return true;
 }
 

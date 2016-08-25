@@ -153,21 +153,24 @@ void GLHeapDiagram::initializeGL() {
 
   // Load the heap history.
   std::ifstream ifs("/tmp/heap.json", std::fstream::in);
-  // heap_history_.LoadFromJSONStream(ifs);
-  uint64_t base = 0; // 0x100000000;
-  //  for (int i = 0; i < 10; ++i) {
+  //heap_history_.LoadFromJSONStream(ifs);
+
+  uint64_t base = 0x100000000;
+  for (int i = 0; i < 10; ++i) {
   heap_history_.recordMalloc(0x200000 + base, 0x200);
-  //  heap_history_.recordMalloc(0x200204+base, 0x200);
-  //  heap_history_.recordMalloc(0x200408+base, 0x200);
+    heap_history_.recordMalloc(0x200204+base, 0x200);
+    heap_history_.recordMalloc(0x200408+base, 0x200);
   heap_history_.recordFree(0x200000 + base);
-  //  heap_history_.recordFree(0x200408+base);
-  //  heap_history_.recordFree(0x200204+base);
-  //  heap_history_.recordMalloc(0x200200+base, 0x100);
-  //  heap_history_.recordMalloc(0x200304+base, 0x100);
-  //  heap_history_.recordFree(0x200200+base);
-  //  heap_history_.recordFree(0x200304+base);
-  //    }
-  // heap_history_.recordMalloc(140737323938016 >> 15, 0x200);*/
+    heap_history_.recordFree(0x200408+base);
+    heap_history_.recordFree(0x200204+base);
+    heap_history_.recordMalloc(0x200200+base, 0x100);
+    heap_history_.recordMalloc(0x200304+base, 0x100);
+    if (i != 9) {
+      heap_history_.recordFree(0x200200+base);
+      heap_history_.recordFree(0x200304+base);
+      }
+  }
+  //heap_history_.recordMalloc(140737323938016 >> 15, 0x200);*/
   heap_history_.setCurrentWindowToGlobal();
 
   setupHeapblockGLStructures();
@@ -224,6 +227,7 @@ void GLHeapDiagram::setTickBaseUniforms() {
 }
 
 void GLHeapDiagram::debugDumpVerticesAndMappings() {
+  /*
   for (const HeapVertex &vertex : g_vertices) {
     std::pair<float, float> vertex_mapped =
         heap_history_.getCurrentWindow().mapHeapCoordinateToDisplay(
@@ -233,7 +237,7 @@ void GLHeapDiagram::debugDumpVerticesAndMappings() {
            vertex_mapped.first, vertex_mapped.second);
   }
   printf("[Debug] ----\n");
-  fflush(stdout);
+  fflush(stdout);*/
 }
 
 void GLHeapDiagram::paintGL() {
@@ -318,16 +322,23 @@ void GLHeapDiagram::mousePressEvent(QMouseEvent *event) {
   double y = static_cast<double>(event->y()) / this->height();
   uint32_t tick;
   uint64_t address;
-  screenToHeap(x, y, &tick, &address);
+  last_mouse_position_ = event->pos();
+  if (!screenToHeap(x, y, &tick, &address)) {
+    emit showMessage("Click out of bounds.");
+    return;
+  }
   HeapBlock current_block;
   uint32_t index;
 
+  printf("clicked at tick %d and address %lx\n", tick, address);
+  fflush(stdout);
+
   if (!heap_history_.getBlockAtSlow(address, tick, &current_block, &index)) {
-    emit blockClicked(true, current_block);
+
+    emit showMessage("Nothing here.");
   } else {
     emit blockClicked(true, current_block);
   }
-  last_mouse_position_ = event->pos();
 }
 
 void GLHeapDiagram::mouseMoveEvent(QMouseEvent *event) {
