@@ -26,7 +26,7 @@ ivec2 Add64(ivec2 a, ivec2 b) {
   int carry_flag = 0;
   // We do not have an easily-available unsigned shift, so we use
   // an IF.
-  if ((carry & 0x8000000) != 0) {
+  if ((carry & 0x80000000) != 0) {
     carry_flag = 1;
   }
   int sum_upper_word = a.y + b.y + carry_flag;
@@ -37,11 +37,13 @@ ivec2 Add64(ivec2 a, ivec2 b) {
 // Function must be valid C++ and valid GLSL!
 ivec2 Sub64(ivec2 a, ivec2 b) {
   int sub_lower_word = a.x - b.x;
-  // We do not have unsigned shift.
-  int borrow = (((a.x ^ 0xFFFFFFFF) & b.x) |
-                ((((a.x ^ b.x) ^ 0xFFFFFFFF) & (sub_lower_word))));
+  int not_a_and_b = (a.x ^ 0xFFFFFFFF) & b.x;
+  int a_equiv_b = (a.x ^ b.x) ^ 0xFFFFFFFF;
+  int a_equiv_b_and_c = a_equiv_b & sub_lower_word;
+  int borrow = not_a_and_b | a_equiv_b_and_c;
   int borrow_flag = 0;
-  if ((borrow & 0x8000000) != 0) {
+  // No unsigned shift-right available.
+  if ((borrow & 0x80000000) != 0) {
     borrow_flag = 1;
   }
   int sub_upper_word = a.y - b.y - borrow_flag;
@@ -49,7 +51,7 @@ ivec2 Sub64(ivec2 a, ivec2 b) {
   return result;
 }
 
-/// Function must be valid C++ and valid GLSL!
+// Function must be valid C++ and valid GLSL!
 float Multiply64BitWithFloat(ivec2 a, float b) {
   bool is_negative = false;
   if ((a.y & 0x80000000) != 0) {
@@ -161,6 +163,7 @@ ivec2 Load32BitLeftShiftedBy4Into64Bit(int low) {
   int c2 = TopNibble(low);
   return ivec2(c1, c2);
 }
+
 // =========================================================================
 // End of valid C++ and valid GLSL part.
 // =========================================================================

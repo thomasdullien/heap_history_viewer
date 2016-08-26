@@ -39,6 +39,13 @@ void TestDisplayHeapWindow::Test96BitSubtraction() {
   QCOMPARE(static_cast<uint32_t>(result.z), 0xFFFFFFF8);
   QCOMPARE(static_cast<uint32_t>(result.y), 0x00000000U);
   QCOMPARE(static_cast<uint32_t>(result.x), 0x00000008U);
+
+  ivec3 subtrahend2(0x43232151, 0x7FFFF, 0);
+  ivec3 value(0x631C4000, 0x7FFFF, 0);
+  result = Sub96(value, subtrahend2);
+
+  QCOMPARE(static_cast<uint32_t>(result.x), 0x1FF91EAFU);
+  QCOMPARE(static_cast<uint32_t>(result.y), 0U);
 }
 
 void TestDisplayHeapWindow::Test96BitAddition() {

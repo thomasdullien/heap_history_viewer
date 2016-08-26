@@ -153,9 +153,9 @@ void GLHeapDiagram::initializeGL() {
 
   // Load the heap history.
   std::ifstream ifs("/tmp/heap.json", std::fstream::in);
-  //heap_history_.LoadFromJSONStream(ifs);
+  heap_history_.LoadFromJSONStream(ifs);
 
-  uint64_t base = 0x100000000;
+  /*uint64_t base = 0x100000000;
   for (int i = 0; i < 10; ++i) {
   heap_history_.recordMalloc(0x200000 + base, 0x200);
     heap_history_.recordMalloc(0x200204+base, 0x200);
@@ -169,7 +169,7 @@ void GLHeapDiagram::initializeGL() {
       heap_history_.recordFree(0x200200+base);
       heap_history_.recordFree(0x200304+base);
       }
-  }
+  }*/
   //heap_history_.recordMalloc(140737323938016 >> 15, 0x200);*/
   heap_history_.setCurrentWindowToGlobal();
 
@@ -228,13 +228,21 @@ void GLHeapDiagram::setTickBaseUniforms() {
 
 void GLHeapDiagram::debugDumpVerticesAndMappings() {
   /*
+  int index = 0;
   for (const HeapVertex &vertex : g_vertices) {
     std::pair<float, float> vertex_mapped =
         heap_history_.getCurrentWindow().mapHeapCoordinateToDisplay(
             vertex.getX(), vertex.getY());
 
-    printf("[Debug] Vertex at %d, %ld -> %f %f\n", vertex.getX(), vertex.getY(),
-           vertex_mapped.first, vertex_mapped.second);
+    if ((vertex_mapped.first >= -1.0) && (vertex_mapped.second <= 1.0) &&
+        (vertex_mapped.second >= -1.0) && (vertex_mapped.second <= 1.0)) {
+            printf("[Debug][Normal] Vertex %d at %d, %lx -> %f %f\n", index, vertex.getX(), vertex.getY(),
+                   vertex_mapped.first, vertex_mapped.second);
+      } else {
+             printf("[Debug][Weird!] Vertex %d at %d, %lx -> %f %f\n", index, vertex.getX(), vertex.getY(),
+                   vertex_mapped.first, vertex_mapped.second);
+      }
+    ++index;
   }
   printf("[Debug] ----\n");
   fflush(stdout);*/

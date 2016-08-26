@@ -34,8 +34,8 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
       printf("[!] Need to parse/display events, no support yet.\n");
     }
     fflush(stdout);
-    if (counter++ > 1000)
-      break;
+    //if (counter++ > 500)
+    //  break;
   }
   printf("heap_blocks_.size() is %d\n", heap_blocks_.size());
   fflush(stdout);

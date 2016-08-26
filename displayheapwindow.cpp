@@ -17,7 +17,7 @@ ivec2 Add64(ivec2 a, ivec2 b) {
   int carry_flag = 0;
   // We do not have an easily-available unsigned shift, so we use
   // an IF.
-  if ((carry & 0x8000000) != 0) {
+  if ((carry & 0x80000000) != 0) {
     carry_flag = 1;
   }
   int sum_upper_word = a.y + b.y + carry_flag;
@@ -28,11 +28,13 @@ ivec2 Add64(ivec2 a, ivec2 b) {
 // Function must be valid C++ and valid GLSL!
 ivec2 Sub64(ivec2 a, ivec2 b) {
   int sub_lower_word = a.x - b.x;
-  // We do not have unsigned shift.
-  int borrow = (((a.x ^ 0xFFFFFFFF) & b.x) |
-                ((((a.x ^ b.x) ^ 0xFFFFFFFF) & (sub_lower_word))));
+  int not_a_and_b = (a.x ^ 0xFFFFFFFF) & b.x;
+  int a_equiv_b = (a.x ^ b.x) ^ 0xFFFFFFFF;
+  int a_equiv_b_and_c = a_equiv_b & sub_lower_word;
+  int borrow = not_a_and_b | a_equiv_b_and_c;
   int borrow_flag = 0;
-  if (borrow & 0x8000000) {
+  // No unsigned shift-right available.
+  if ((borrow & 0x80000000) != 0) {
     borrow_flag = 1;
   }
   int sub_upper_word = a.y - b.y - borrow_flag;
@@ -265,10 +267,8 @@ void DisplayHeapWindow::pan(double dx, double dy) {
   // Calculate the height and width of the window as long doubles.
   long double height = getHeightAsLongDouble();
   long double width = getWidthAsLongDouble();
-  printf("Pan %f %f\n", dx, dy);
   long double pan_x = -dx * width;
   long double pan_y = dy * height;
-  printf("pan %f units and %f units\n", pan_x, pan_y);
   ivec2 pan_x_64 = LongDoubleTo64Bits(pan_x);
   ivec2 new_minimum_tick = Add64(minimum_tick_, pan_x_64);
   ivec2 new_maximum_tick = Add64(maximum_tick_, pan_x_64);
@@ -480,5 +480,23 @@ std::pair<float, float> DisplayHeapWindow::internalMapHeapCoordinateToDisplay(
   // ==========================================================================
   // End of mandatory valid GLSL part.
   // ==========================================================================
+  // XXX:DEBUG CODE
+  /*
+  {
+    printf("[Debug]   address is %08lx%08lx%08lx\n", address.z, address.y, address.x);
+    printf("[Debug]   tick is %08lx%08lx\n", tick.y, tick.x);
+    printf("[Debug]   minimum_visible_tick is %08lx%08lx\n", minimum_visible_tick.y, minimum_visible_tick.x);
+    printf("[Debug]   heap_base is %08lx%08lx%08lx\n", heap_base.z, heap_base.y, heap_base.x);
+    printf("[Debug]   address_coordinate_translated is %08lx%08lx%08lx\n",
+           address_coordinate_translated.z, address_coordinate_translated.y,
+           address_coordinate_translated.x);
+    printf("[Debug]   tick_coordinate_translated is %08lx%08lx\n",
+           tick_coordinate_translated.y, tick_coordinate_translated.x);
+    printf("[Debug]   temp_x is %f, temp_y is %f\n", temp_x, temp_y);
+    printf("[Debug]   scale_heap_to_screen[0][0] is %f, scale_heap_to_screen[1][1] is %f\n",
+           scale_heap_to_screen[0][0], scale_heap_to_screen[1][1]);
+    printf("[Debug]   final_x is %f, final_y is %f\n", final_x, final_y);
+  }*/
+
   return std::make_pair(final_x, final_y);
 }
