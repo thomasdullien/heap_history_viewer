@@ -3,9 +3,13 @@ lines of Gerardo Richarte's HeapDraw (for more details, check
 http://actes.sstic.org/SSTIC07/Rump_sessions/SSTIC07-rump-Richarte-Heap_Massaging.pdf)
 
 The tool had been reimplemented by various people in various places a few times,
-usually in a hackish / nonscalable manner. Common mistakes include:
+usually in a hackish / nonscalable manner. zynamics used to hand source code for
+a JOGL-based UI out with some of our trainings, but that tool is not easily 
+portable to modern OpenGL *or* 64-bit address spaces.
 
- - Not using OpenGL or a fast graphics card to render lots of rectangles.
+Other common mistakes include:
+
+ - Not using OpenGL to render lots of rectangles.
  - Using floats or other low-precision coordinates to represent rectangle
    corners and hence suffering from rounding errors.
  - Not using a language that can deal with a couple million rectangles.
