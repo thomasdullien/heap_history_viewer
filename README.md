@@ -36,5 +36,11 @@ A million tasks are still left to do. Useful things that should be added:
 
 Contributions very welcome.
 
+Basic controls:
+ - CTRL + wheel: Zoom in / out
+ - Click + drag: Pan diagram
+ - CTRL + shift + wheel: Squash / stretch horizontally
+ - shift + wheel: Squash / stretch vertically
+
 Cheers,
 Halvar Flake / Thomas Dullien
