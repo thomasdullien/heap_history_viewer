@@ -10,6 +10,7 @@
 #include <QOpenGLFunctions>
 #include <QPoint>
 
+#include "glheapdiagramlayer.h"
 #include "heaphistory.h"
 #include "transform3d.h"
 
@@ -42,7 +43,7 @@ protected:
   void wheelEvent(QWheelEvent *event);
 
 private:
-  Q_OBJECT;
+  Q_OBJECT
   // This should be a power-of-2.
   static constexpr uint32_t number_of_grid_lines_ = 16;
 
@@ -67,31 +68,7 @@ private:
   // with two matrices that are applied iteratively.
   QMatrix2x2 heap_to_screen_matrix_;
 
-  // VAO, VBO and shader for the heap blocks.
-  QOpenGLBuffer heap_vertex_buffer_;
-  QOpenGLVertexArrayObject heap_block_vao_;
-  std::unique_ptr<QOpenGLShaderProgram> heap_shader_program_;
-  // Stuff to map heap blocks to the screen.
-  int uniform_vertex_to_screen_;
-  int uniform_translation_part_;
-
-  // An ivec3 that is filled with the uint64_t of the base address of the
-  // displayed fraction of the heap.
-  int uniform_visible_heap_base_A_;
-  int uniform_visible_heap_base_B_;
-  int uniform_visible_heap_base_C_;
-
-  // The minimum tick is provided as ivec2.
-  int uniform_visible_tick_base_A_;
-  int uniform_visible_tick_base_B_;
-
-  // VAO, VBO and shader for the grid.
-  QOpenGLBuffer grid_vertex_buffer_;
-  QOpenGLVertexArrayObject grid_vao_;
-  std::unique_ptr<QOpenGLShaderProgram> grid_shader_;
-  int uniform_grid_to_heap_map_;
-  int uniform_heap_to_screen_map_;
-  int uniform_grid_to_heap_translation_;
+  std::unique_ptr<GLHeapDiagramLayer> block_layer_;
 
   // The heap history.
   HeapHistory heap_history_;

@@ -14,140 +14,10 @@
 #include "glheapdiagram.h"
 
 GLHeapDiagram::GLHeapDiagram(QWidget *parent)
-    : QOpenGLWidget(parent), heap_shader_program_(new QOpenGLShaderProgram()),
-      grid_shader_(new QOpenGLShaderProgram()) {
+    : QOpenGLWidget(parent), block_layer_(new GLHeapDiagramLayer(":/simple.vert", ":/simple.frag")) {
 
   //  QObject::connect(this, SIGNAL(blockClicked), parent->parent(),
   //  SLOT(blockClicked));
-}
-
-// There are 4 kind of vertices that need to be taken care of in the diagram:
-//  - the heap blocks
-//  - the events (vertical lines)
-//  - the highlighted addresses (horizontal lines)
-//  - the grid lines.
-// For the moment, all of them are stored in the following global vectors.
-// TODO(thomasdullien): Refactor this to move these vectors inside the
-// GLHeapDiagram class.
-
-static std::vector<HeapVertex> g_grid_vertices;
-static std::vector<HeapVertex> g_block_vertices;
-static std::vector<HeapVertex> g_event_vertices;
-static std::vector<HeapVertex> g_address_vertices;
-
-// Set up everything needed for drawing the grid.
-void GLHeapDiagram::setupGridGLStructures() {
-  // Build a 16x16 unit grid.
-  static constexpr QVector3D GREY(0.8f, 0.8f, 0.8f);
-  for (uint32_t index = 0; index < number_of_grid_lines_; ++index) {
-    // Horizontal lines.
-    g_grid_vertices.push_back(
-        HeapVertex(0.0f, index * (1.0 / number_of_grid_lines_), GREY));
-    g_grid_vertices.push_back(
-        HeapVertex(1.0f, index * (1.0 / number_of_grid_lines_), GREY));
-    // Vertical lines.
-    g_grid_vertices.push_back(
-        HeapVertex(index * (1.0 / number_of_grid_lines_), 0.0f, GREY));
-    g_grid_vertices.push_back(
-        HeapVertex(index * (1.0 / number_of_grid_lines_), 1.0f, GREY));
-  }
-
-  grid_shader_->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/grid.vert");
-  grid_shader_->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/grid.frag");
-  grid_shader_->link();
-  grid_shader_->bind();
-
-  // Create the grid vertex buffer and fill it.
-  grid_vertex_buffer_.create();
-  grid_vertex_buffer_.bind();
-  grid_vertex_buffer_.setUsagePattern(QOpenGLBuffer::DynamicDraw);
-  grid_vertex_buffer_.allocate(&(g_grid_vertices[0]),
-                               g_grid_vertices.size() * sizeof(HeapVertex));
-
-  uniform_grid_to_heap_map_ = grid_shader_->uniformLocation("grid_to_heap_map");
-  uniform_heap_to_screen_map_ =
-      grid_shader_->uniformLocation("heap_to_screen_map");
-  uniform_grid_to_heap_translation_ =
-      grid_shader_->uniformLocation("grid_to_heap_translation");
-
-  grid_vao_.create();
-  grid_vao_.bind();
-
-  // Register attribute arrays with stride for the vertex attributes.
-  grid_shader_->enableAttributeArray(0);
-  grid_shader_->enableAttributeArray(1);
-  grid_shader_->setAttributeBuffer(0, GL_FLOAT, HeapVertex::positionOffset(),
-                                   HeapVertex::PositionTupleSize,
-                                   HeapVertex::stride());
-  grid_shader_->setAttributeBuffer(1, GL_FLOAT, HeapVertex::colorOffset(),
-                                   HeapVertex::ColorTupleSize,
-                                   HeapVertex::stride());
-  glBindAttribLocation(grid_shader_->programId(), 0, "position");
-  glBindAttribLocation(grid_shader_->programId(), 1, "color");
-
-  // Unbind.
-  grid_vao_.release();
-  grid_vertex_buffer_.release();
-  grid_shader_->release();
-}
-
-// Set up the uniforms for the different shaders.
-void GLHeapDiagram::setupUniformsForShaders() {
-  uniform_vertex_to_screen_ =
-      heap_shader_program_->uniformLocation("scale_heap_to_screen");
-  uniform_visible_heap_base_A_ =
-      heap_shader_program_->uniformLocation("visible_heap_base_A");
-  uniform_visible_heap_base_B_ =
-      heap_shader_program_->uniformLocation("visible_heap_base_B");
-  uniform_visible_heap_base_C_ =
-      heap_shader_program_->uniformLocation("visible_heap_base_C");
-  uniform_visible_tick_base_A_ =
-      heap_shader_program_->uniformLocation("visible_tick_base_A");
-  uniform_visible_tick_base_B_ =
-      heap_shader_program_->uniformLocation("visible_tick_base_B");
-}
-
-void GLHeapDiagram::setupHeapblockGLStructures() {
-  // Load the shaders.
-  heap_shader_program_->addShaderFromSourceFile(QOpenGLShader::Vertex,
-                                                ":/simple.vert");
-  heap_shader_program_->addShaderFromSourceFile(QOpenGLShader::Fragment,
-                                                ":/simple.frag");
-  heap_shader_program_->link();
-  heap_shader_program_->bind();
-
-  // Create the heap block vertex buffer.
-  heap_vertex_buffer_.create();
-  heap_vertex_buffer_.bind();
-  heap_vertex_buffer_.setUsagePattern(QOpenGLBuffer::StaticDraw);
-
-  // Fill the vertex buffer from the heap history.
-  heap_history_.heapBlockVerticesForActiveWindow(&g_block_vertices);
-  heap_vertex_buffer_.allocate(&(g_block_vertices[0]),
-                               g_block_vertices.size() * sizeof(HeapVertex));
-
-  setupUniformsForShaders();
-
-  // Create the vertex array object.
-  heap_block_vao_.create();
-  heap_block_vao_.bind();
-
-  // Register attribute arrays with stride for the vertex attributes.
-  heap_shader_program_->enableAttributeArray(0);
-  heap_shader_program_->enableAttributeArray(1);
-  heap_shader_program_->setAttributeBuffer(
-      0, GL_FLOAT, HeapVertex::positionOffset(), HeapVertex::PositionTupleSize,
-      HeapVertex::stride());
-  heap_shader_program_->setAttributeBuffer(
-      1, GL_FLOAT, HeapVertex::colorOffset(), HeapVertex::ColorTupleSize,
-      HeapVertex::stride());
-  glBindAttribLocation(heap_shader_program_->programId(), 0, "position");
-  glBindAttribLocation(heap_shader_program_->programId(), 1, "color");
-
-  // Unbind.
-  heap_block_vao_.release();
-  heap_vertex_buffer_.release();
-  heap_shader_program_->release();
 }
 
 void GLHeapDiagram::initializeGL() {
@@ -159,11 +29,14 @@ void GLHeapDiagram::initializeGL() {
   // Load the heap history.
   std::ifstream ifs("/tmp/heap.json", std::fstream::in);
   heap_history_.LoadFromJSONStream(ifs);
-
   heap_history_.setCurrentWindowToGlobal();
 
-  setupHeapblockGLStructures();
-  setupGridGLStructures();
+  // Initialize the layers.
+  std::vector<HeapVertex>* block_vertices = block_layer_->getVertexVector();
+  heap_history_.heapBlockVerticesForActiveWindow(block_vertices);
+  block_layer_->initializeGLStructures(this);
+  //setupHeapblockGLStructures();
+  //setupGridGLStructures();
 }
 
 QSize GLHeapDiagram::minimumSizeHint() { return QSize(500, 500); }
@@ -192,27 +65,6 @@ bool GLHeapDiagram::screenToHeap(double x, double y, uint32_t *tick,
                                  uint64_t *address) {
   return heap_history_.getCurrentWindow().mapDisplayCoordinateToHeap(x, y, tick,
                                                                      address);
-}
-
-void GLHeapDiagram::setHeapBaseUniforms() {
-  heap_shader_program_->setUniformValue(
-      uniform_visible_heap_base_A_,
-      heap_history_.getCurrentWindow().getMinimumAddress().x);
-  heap_shader_program_->setUniformValue(
-      uniform_visible_heap_base_B_,
-      heap_history_.getCurrentWindow().getMinimumAddress().y);
-  heap_shader_program_->setUniformValue(
-      uniform_visible_heap_base_C_,
-      heap_history_.getCurrentWindow().getMinimumAddress().z);
-}
-
-void GLHeapDiagram::setTickBaseUniforms() {
-  heap_shader_program_->setUniformValue(
-      uniform_visible_tick_base_A_,
-      heap_history_.getCurrentWindow().getMinimumTick().x);
-  heap_shader_program_->setUniformValue(
-      uniform_visible_tick_base_B_,
-      heap_history_.getCurrentWindow().getMinimumTick().y);
 }
 
 void GLHeapDiagram::debugDumpVerticesAndMappings() {
@@ -245,28 +97,12 @@ void GLHeapDiagram::paintGL() {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   updateHeapToScreenMap();
-
   debugDumpVerticesAndMappings();
-
-  // Render the heap blocks.
-  heap_shader_program_->bind();
-
-  heap_shader_program_->setUniformValue(uniform_vertex_to_screen_,
-                                        heap_to_screen_matrix_);
-  // Set the uniforms for the shader to transmit the base address of the
-  // currently visible heap.
-  setHeapBaseUniforms();
-
-  // Set the uniforms for the shader to transmit the base tick of the
-  // current visible portion of the heap history.
-  setTickBaseUniforms();
-
-  {
-    heap_block_vao_.bind();
-    glDrawArrays(GL_TRIANGLES, 0, g_block_vertices.size() * sizeof(HeapVertex));
-    heap_block_vao_.release();
-  }
-  heap_shader_program_->release();
+  const DisplayHeapWindow& heap_window = heap_history_.getCurrentWindow();
+  block_layer_->paintLayer(
+    heap_window.getMinimumTick(),
+    heap_window.getMinimumAddress(),
+    heap_to_screen_matrix_);
   /*
     printf("height is %lx, width is %lx\n",
     heap_history_.getCurrentWindow().height(),
@@ -311,10 +147,6 @@ void GLHeapDiagram::update() {
 void GLHeapDiagram::resizeGL(int w, int h) { printf("Resize GL was called\n"); }
 
 GLHeapDiagram::~GLHeapDiagram() {
-  heap_block_vao_.destroy();
-  heap_vertex_buffer_.destroy();
-  grid_vao_.destroy();
-  grid_vertex_buffer_.destroy();
 }
 
 void GLHeapDiagram::mousePressEvent(QMouseEvent *event) {
