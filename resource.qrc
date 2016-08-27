@@ -4,5 +4,6 @@
         <file>simple.frag</file>
         <file>grid.frag</file>
         <file>grid.vert</file>
+        <file>event_shader.vert</file>
     </qresource>
 </RCC>

@@ -11,12 +11,10 @@
 HeapConflict::HeapConflict(uint32_t tick, uint64_t address, bool alloc)
     : tick_(tick), address_(address), allocation_or_free_(alloc) {}
 
-
 // The code for the heap history.
 HeapHistory::HeapHistory()
     : current_tick_(0),
-      global_area_(std::numeric_limits<uint64_t>::max(), 0, 0, 1) {
-}
+      global_area_(std::numeric_limits<uint64_t>::max(), 0, 0, 1) {}
 
 void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
   nlohmann::json incoming_data;
@@ -137,7 +135,7 @@ void HeapHistory::HeapBlockToVertices(const HeapBlock &block,
 }
 
 size_t
-HeapHistory::dumpVerticesForActiveWindow(std::vector<HeapVertex> *vertices) {
+HeapHistory::heapBlockVerticesForActiveWindow(std::vector<HeapVertex> *vertices) {
   size_t active_block_count = 0;
   for (std::vector<HeapBlock>::iterator iter = heap_blocks_.begin();
        iter != heap_blocks_.end(); ++iter) {
@@ -231,8 +229,10 @@ void HeapHistory::panCurrentWindow(double dx, double dy) {
 // Zoom toward a given point on the screen. The point is given in relative
 // height / width of the current window, e.g. the center is 0.5, 0.5.
 void HeapHistory::zoomToPoint(double dx, double dy, double how_much_x,
-                              double how_much_y) {
-  current_window_.zoomToPoint(dx, dy, how_much_x, how_much_y);
+                              double how_much_y, long double max_height,
+                              long double max_width) {
+  current_window_.zoomToPoint(dx, dy, how_much_x, how_much_y, max_height,
+                              max_width);
 }
 
 /*const ContinuousHeapWindow &

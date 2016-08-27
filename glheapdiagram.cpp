@@ -21,12 +21,21 @@ GLHeapDiagram::GLHeapDiagram(QWidget *parent)
   //  SLOT(blockClicked));
 }
 
-// Vertices for drawing the background grid.
+// There are 4 kind of vertices that need to be taken care of in the diagram:
+//  - the heap blocks
+//  - the events (vertical lines)
+//  - the highlighted addresses (horizontal lines)
+//  - the grid lines.
+// For the moment, all of them are stored in the following global vectors.
+// TODO(thomasdullien): Refactor this to move these vectors inside the
+// GLHeapDiagram class.
+
 static std::vector<HeapVertex> g_grid_vertices;
+static std::vector<HeapVertex> g_block_vertices;
+static std::vector<HeapVertex> g_event_vertices;
+static std::vector<HeapVertex> g_address_vertices;
 
-// Vertices for drawing the heap layout.
-static std::vector<HeapVertex> g_vertices;
-
+// Set up everything needed for drawing the grid.
 void GLHeapDiagram::setupGridGLStructures() {
   // Build a 16x16 unit grid.
   static constexpr QVector3D GREY(0.8f, 0.8f, 0.8f);
@@ -82,6 +91,7 @@ void GLHeapDiagram::setupGridGLStructures() {
   grid_shader_->release();
 }
 
+// Set up the uniforms for the different shaders.
 void GLHeapDiagram::setupUniformsForShaders() {
   uniform_vertex_to_screen_ =
       heap_shader_program_->uniformLocation("scale_heap_to_screen");
@@ -112,14 +122,9 @@ void GLHeapDiagram::setupHeapblockGLStructures() {
   heap_vertex_buffer_.setUsagePattern(QOpenGLBuffer::StaticDraw);
 
   // Fill the vertex buffer from the heap history.
-  heap_history_.dumpVerticesForActiveWindow(&g_vertices);
-  heap_vertex_buffer_.allocate(&(g_vertices[0]),
-                               g_vertices.size() * sizeof(HeapVertex));
-
-  for (const HeapVertex &vertex : g_vertices) {
-    printf("[!] Vertex is %lx, %lx\n", vertex.getX(), vertex.getY());
-  }
-  fflush(stdout);
+  heap_history_.heapBlockVerticesForActiveWindow(&g_block_vertices);
+  heap_vertex_buffer_.allocate(&(g_block_vertices[0]),
+                               g_block_vertices.size() * sizeof(HeapVertex));
 
   setupUniformsForShaders();
 
@@ -148,29 +153,13 @@ void GLHeapDiagram::setupHeapblockGLStructures() {
 void GLHeapDiagram::initializeGL() {
   initializeOpenGLFunctions();
   glEnable(GL_BLEND);
-  //  glEnable(GL_CULL_FACE);
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+  glEnable(GL_CULL_FACE);
+  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
   // Load the heap history.
   std::ifstream ifs("/tmp/heap.json", std::fstream::in);
   heap_history_.LoadFromJSONStream(ifs);
 
-  /*uint64_t base = 0x100000000;
-  for (int i = 0; i < 10; ++i) {
-  heap_history_.recordMalloc(0x200000 + base, 0x200);
-    heap_history_.recordMalloc(0x200204+base, 0x200);
-    heap_history_.recordMalloc(0x200408+base, 0x200);
-  heap_history_.recordFree(0x200000 + base);
-    heap_history_.recordFree(0x200408+base);
-    heap_history_.recordFree(0x200204+base);
-    heap_history_.recordMalloc(0x200200+base, 0x100);
-    heap_history_.recordMalloc(0x200304+base, 0x100);
-    if (i != 9) {
-      heap_history_.recordFree(0x200200+base);
-      heap_history_.recordFree(0x200304+base);
-      }
-  }*/
-  //heap_history_.recordMalloc(140737323938016 >> 15, 0x200);*/
   heap_history_.setCurrentWindowToGlobal();
 
   setupHeapblockGLStructures();
@@ -227,6 +216,7 @@ void GLHeapDiagram::setTickBaseUniforms() {
 }
 
 void GLHeapDiagram::debugDumpVerticesAndMappings() {
+  //heap_history_.getCurrentWindow().setDebug(true);
   /*
   int index = 0;
   for (const HeapVertex &vertex : g_vertices) {
@@ -236,10 +226,12 @@ void GLHeapDiagram::debugDumpVerticesAndMappings() {
 
     if ((vertex_mapped.first >= -1.0) && (vertex_mapped.second <= 1.0) &&
         (vertex_mapped.second >= -1.0) && (vertex_mapped.second <= 1.0)) {
-            printf("[Debug][Normal] Vertex %d at %d, %lx -> %f %f\n", index, vertex.getX(), vertex.getY(),
+            printf("[Debug][Normal] Vertex %d at %d, %lx -> %f %f\n", index,
+  vertex.getX(), vertex.getY(),
                    vertex_mapped.first, vertex_mapped.second);
       } else {
-             printf("[Debug][Weird!] Vertex %d at %d, %lx -> %f %f\n", index, vertex.getX(), vertex.getY(),
+             printf("[Debug][Weird!] Vertex %d at %d, %lx -> %f %f\n", index,
+  vertex.getX(), vertex.getY(),
                    vertex_mapped.first, vertex_mapped.second);
       }
     ++index;
@@ -271,7 +263,7 @@ void GLHeapDiagram::paintGL() {
 
   {
     heap_block_vao_.bind();
-    glDrawArrays(GL_TRIANGLES, 0, g_vertices.size() * sizeof(HeapVertex));
+    glDrawArrays(GL_TRIANGLES, 0, g_block_vertices.size() * sizeof(HeapVertex));
     heap_block_vao_.release();
   }
   heap_shader_program_->release();
@@ -371,18 +363,26 @@ void GLHeapDiagram::wheelEvent(QWheelEvent *event) {
   Qt::KeyboardModifiers modifiers = QApplication::keyboardModifiers();
   double point_x = static_cast<double>(event->x()) / this->width();
   double point_y = static_cast<double>(event->y()) / this->height();
+  long double max_height =
+      (heap_history_.getMaximumAddress() - heap_history_.getMinimumAddress()) *
+      1.5 * 16;
+  long double max_width =
+      (heap_history_.getMaximumTick() - heap_history_.getMinimumTick()) * 1.5 * 16;
 
   if (!(modifiers & Qt::ControlModifier) && (modifiers & Qt::ShiftModifier)) {
     how_much_y = 1.0 - movement_quantity;
-    heap_history_.zoomToPoint(point_x, point_y, how_much_x, how_much_y);
+    heap_history_.zoomToPoint(point_x, point_y, how_much_x, how_much_y,
+                              max_height, max_width);
   } else if ((modifiers & Qt::ControlModifier) &&
              (modifiers & Qt::ShiftModifier)) {
     how_much_x = 1.0 - movement_quantity;
-    heap_history_.zoomToPoint(point_x, point_y, how_much_x, how_much_y);
+    heap_history_.zoomToPoint(point_x, point_y, how_much_x, how_much_y,
+                              max_height, max_width);
   } else if (modifiers & Qt::ControlModifier) {
     how_much_y = 1.0 - movement_quantity;
     how_much_x = 1.0 - movement_quantity;
-    heap_history_.zoomToPoint(point_x, point_y, how_much_x, how_much_y);
+    heap_history_.zoomToPoint(point_x, point_y, how_much_x, how_much_y,
+                              max_height, max_width);
   }
 
   QOpenGLWidget::update();

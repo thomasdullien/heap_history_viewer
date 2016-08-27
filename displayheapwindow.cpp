@@ -200,9 +200,7 @@ ivec3 LongDoubleTo96Bits(long double value) {
   return result;
 }
 
-DisplayHeapWindow::DisplayHeapWindow() {
-
-}
+DisplayHeapWindow::DisplayHeapWindow() {}
 
 DisplayHeapWindow::DisplayHeapWindow(const ivec2 &minimum_tick,
                                      const ivec2 &maximum_tick,
@@ -223,6 +221,9 @@ void DisplayHeapWindow::reset(const HeapWindow &global_window) {
   maximum_address_ = Load64BitLeftShiftedBy4Into96Bit(
       global_window.maximum_address_ & 0xFFFFFFFF,
       global_window.minimum_address_ >> 32);
+
+  maximum_width_ = Sub64(maximum_tick_, minimum_tick_);
+  maximum_height_ = Sub96(maximum_address_, minimum_address_);
 }
 
 void DisplayHeapWindow::checkHorizontalCenter(ivec2 *new_minimum_tick,
@@ -282,18 +283,29 @@ void DisplayHeapWindow::pan(double dx, double dy) {
   checkVerticalCenter(&new_minimum_address, &new_maximum_address);
 
   maximum_tick_ = new_maximum_tick;
-  minimum_tick_= new_minimum_tick;
+  minimum_tick_ = new_minimum_tick;
   maximum_address_ = new_maximum_address;
   minimum_address_ = new_minimum_address;
 }
 
 void DisplayHeapWindow::zoomToPoint(double dx, double dy, double how_much_x,
-                                    double how_much_y) {
+                                    double how_much_y, long double max_height,
+                                    long double max_width) {
   long double epsilon = 0.05;
   long double height = getHeightAsLongDouble();
   long double width = getWidthAsLongDouble();
-  long double extra_height = (height * how_much_y) - height;
-  double extra_width = (width * how_much_x) - width;
+  long double target_height = height * how_much_y;
+  long double target_width = width * how_much_x;
+  if (target_height > maximum_height_.getLongDouble()) {
+    target_height = maximum_height_.getLongDouble();
+  }
+  if (target_width > maximum_width_.getLongDouble()) {
+    target_width = maximum_width_.getLongDouble();
+  }
+  double extra_width = target_width - width;
+  long double extra_height = target_height - height;
+
+  // Do not allow the height or width to be more than 2x total heap size.
 
   // Make sure we move a little more toward the point than we need to keep the
   // point constant on screen.
@@ -317,8 +329,10 @@ void DisplayHeapWindow::zoomToPoint(double dx, double dy, double how_much_x,
       Add96(maximum_address_, LongDoubleTo96Bits(extra_height_top));
   ivec3 new_minimum_address =
       Sub96(minimum_address_, LongDoubleTo96Bits(extra_height_bottom));
-  ivec2 new_minimum_tick = Sub64(minimum_tick_, LongDoubleTo64Bits(extra_width_left));
-  ivec2 new_maximum_tick = Add64(maximum_tick_, LongDoubleTo64Bits(extra_width_right));
+  ivec2 new_minimum_tick =
+      Sub64(minimum_tick_, LongDoubleTo64Bits(extra_width_left));
+  ivec2 new_maximum_tick =
+      Add64(maximum_tick_, LongDoubleTo64Bits(extra_width_right));
 
   // Now ensure that the center is not outside of bounds.
   checkHorizontalCenter(&new_minimum_tick, &new_maximum_tick);
@@ -338,7 +352,7 @@ bool DisplayHeapWindow::mapDisplayCoordinateToHeap(double dx, double dy,
   long double height = getHeightAsLongDouble();
   long double width = getWidthAsLongDouble();
   long double relative_x = dx * width;
-  long double relative_y = (1.0-dy) * height;
+  long double relative_y = (1.0 - dy) * height;
 
   ivec3 tentative_address =
       Add96(LongDoubleTo96Bits(relative_y), minimum_address_);
@@ -419,7 +433,8 @@ long double DisplayHeapWindow::getWidthAsLongDouble() const {
 }
 
 std::pair<float, float>
-DisplayHeapWindow::mapHeapCoordinateToDisplay(uint32_t tick, uint64_t address) const {
+DisplayHeapWindow::mapHeapCoordinateToDisplay(uint32_t tick,
+                                              uint64_t address) const {
   ivec3 position(tick, address & 0xFFFFFFFF, address >> 32);
 
   return internalMapHeapCoordinateToDisplay(
@@ -481,22 +496,26 @@ std::pair<float, float> DisplayHeapWindow::internalMapHeapCoordinateToDisplay(
   // End of mandatory valid GLSL part.
   // ==========================================================================
   // XXX:DEBUG CODE
-  /*
-  {
-    printf("[Debug]   address is %08lx%08lx%08lx\n", address.z, address.y, address.x);
+
+  if (debug_mode_) {
+    printf("[Debug]   address is %08lx%08lx%08lx\n", address.z, address.y,
+           address.x);
     printf("[Debug]   tick is %08lx%08lx\n", tick.y, tick.x);
-    printf("[Debug]   minimum_visible_tick is %08lx%08lx\n", minimum_visible_tick.y, minimum_visible_tick.x);
-    printf("[Debug]   heap_base is %08lx%08lx%08lx\n", heap_base.z, heap_base.y, heap_base.x);
+    printf("[Debug]   minimum_visible_tick is %08lx%08lx\n",
+           minimum_visible_tick.y, minimum_visible_tick.x);
+    printf("[Debug]   heap_base is %08lx%08lx%08lx\n", heap_base.z, heap_base.y,
+           heap_base.x);
     printf("[Debug]   address_coordinate_translated is %08lx%08lx%08lx\n",
            address_coordinate_translated.z, address_coordinate_translated.y,
            address_coordinate_translated.x);
     printf("[Debug]   tick_coordinate_translated is %08lx%08lx\n",
            tick_coordinate_translated.y, tick_coordinate_translated.x);
     printf("[Debug]   temp_x is %f, temp_y is %f\n", temp_x, temp_y);
-    printf("[Debug]   scale_heap_to_screen[0][0] is %f, scale_heap_to_screen[1][1] is %f\n",
+    printf("[Debug]   scale_heap_to_screen[0][0] is %f, "
+           "scale_heap_to_screen[1][1] is %f\n ",
            scale_heap_to_screen[0][0], scale_heap_to_screen[1][1]);
     printf("[Debug]   final_x is %f, final_y is %f\n", final_x, final_y);
-  }*/
+  }
 
   return std::make_pair(final_x, final_y);
 }

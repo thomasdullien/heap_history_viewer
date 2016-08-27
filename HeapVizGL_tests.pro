@@ -19,7 +19,8 @@ SOURCES += heapvizwindow.cpp \
     heaphistory.cpp \
     displayheapwindow.cpp \
     heapwindow.cpp \
-    testdisplayheapwindow.cpp
+    testdisplayheapwindow.cpp \
+    glheapdiagramlayer.cpp
 
 HEADERS  += heapvizwindow.h \
     glheapdiagram.h \
@@ -30,7 +31,8 @@ HEADERS  += heapvizwindow.h \
     json.hpp \
     displayheapwindow.h \
     heapwindow.h \
-    testdisplayheapwindow.h
+    testdisplayheapwindow.h \
+    glheapdiagramlayer.h
 
 FORMS    += heapvizwindow.ui
 

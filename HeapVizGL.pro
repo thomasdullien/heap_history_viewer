@@ -19,7 +19,8 @@ SOURCES += main.cpp \
     transform3d.cpp \
     heaphistory.cpp \
     displayheapwindow.cpp \
-    heapwindow.cpp
+    heapwindow.cpp \
+    glheapdiagramlayer.cpp
 
 HEADERS  += heapvizwindow.h \
     glheapdiagram.h \
@@ -29,7 +30,8 @@ HEADERS  += heapvizwindow.h \
     heaphistory.h \
     json.hpp \
     displayheapwindow.h \
-    heapwindow.h
+    heapwindow.h \
+    glheapdiagramlayer.h
 
 FORMS    += heapvizwindow.ui
 

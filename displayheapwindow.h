@@ -31,6 +31,14 @@ public:
   int64_t getInt64() const {
     return static_cast<int64_t>(getUint64());
   }
+  long double getLongDouble() const {
+    long double shift32 = static_cast<long double>(0x100000000);
+    long double result = y;
+    result *= shift32;
+    long double x2 = x;
+    result += x2;
+    return result;
+  }
   void flipBit(uint32_t index) {
     if (index >= 32) {
       index -= 32;
@@ -152,7 +160,8 @@ public:
                     const ivec3 &minimum_address, const ivec3 &maximum_address);
   void reset(const HeapWindow &global_window);
   void pan(double dx, double dy);
-  void zoomToPoint(double dx, double dy, double how_much_x, double how_much_y);
+  void zoomToPoint(double dx, double dy, double how_much_x, double how_much_y,
+                   long double max_height, long double max_width);
   std::pair<float, float> mapHeapCoordinateToDisplay(uint32_t tick,
                                                      uint64_t address) const;
   // Map screen coordinates back to the heap, returns false if the coordinate
@@ -172,6 +181,8 @@ public:
 
   long double getHeightAsLongDouble() const;
   long double getWidthAsLongDouble() const;
+
+  void setDebug(bool mode) const { debug_mode_ = mode; }
 private:
   // The internal version of the above mapping function. The code should be
   // kept in a state so that it can be cut & pasted into the GLSL files with-
@@ -188,6 +199,11 @@ private:
   ivec2 maximum_tick_;
   ivec3 minimum_address_;
   ivec3 maximum_address_;
+
+  ivec2 maximum_width_;
+  ivec3 maximum_height_;
+
+  mutable bool debug_mode_;
 };
 
 #endif // DISPLAYHEAPWINDOW_H

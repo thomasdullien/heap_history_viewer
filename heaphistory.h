@@ -50,9 +50,10 @@ public:
   void recordFree(uint64_t address, uint8_t heap_id = 0);
   void recordRealloc(uint64_t old_address, uint64_t new_address, size_t size,
                      uint8_t heap_id);
+  void recordEvent();
 
   // Dump out triangles for the current window of heap events.
-  size_t dumpVerticesForActiveWindow(std::vector<HeapVertex> *vertices);
+  size_t heapBlockVerticesForActiveWindow(std::vector<HeapVertex> *vertices);
   uint64_t getMinimumAddress() { return global_area_.minimum_address_; }
   uint64_t getMaximumAddress() { return global_area_.maximum_address_; }
   uint32_t getMinimumTick() { return global_area_.minimum_tick_; }
@@ -60,7 +61,8 @@ public:
 
   // Functions for moving the currently visible window around.
   void panCurrentWindow(double dx, double dy);
-  void zoomToPoint(double dx, double dy, double how_much_x, double how_much_y);
+  void zoomToPoint(double dx, double dy, double how_much_x, double how_much_y,
+                   long double max_height, long double max_width);
 
 private:
   void recordMallocConflict(uint64_t address, size_t size, uint8_t heap_id);
