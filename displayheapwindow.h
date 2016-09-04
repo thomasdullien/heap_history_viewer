@@ -72,7 +72,9 @@ public:
   }
 
   uint64_t getLowUint64() const {
-    return (static_cast<uint64_t>(static_cast<uint32_t>(y)) << 32) | x;
+    uint64_t temp = static_cast<uint64_t>(static_cast<uint32_t>(y)) << 32;
+    temp |= static_cast<uint32_t>(x);
+    return temp;
   }
   void setLowUint64(uint64_t val) {
     x = val & 0xFFFFFFFF;
