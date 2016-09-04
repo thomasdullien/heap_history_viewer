@@ -14,7 +14,10 @@
 #include "glheapdiagram.h"
 
 GLHeapDiagram::GLHeapDiagram(QWidget *parent)
-    : QOpenGLWidget(parent), block_layer_(new GLHeapDiagramLayer(":/simple.vert", ":/simple.frag")) {
+    : QOpenGLWidget(parent), block_layer_(new GLHeapDiagramLayer(
+                                 ":/simple.vert", ":/simple.frag", false)),
+      event_layer_(new GLHeapDiagramLayer(":/event_shader.vert",
+                                          ":/simple.frag", true)) {
 
   //  QObject::connect(this, SIGNAL(blockClicked), parent->parent(),
   //  SLOT(blockClicked));
@@ -31,12 +34,19 @@ void GLHeapDiagram::initializeGL() {
   heap_history_.LoadFromJSONStream(ifs);
   heap_history_.setCurrentWindowToGlobal();
 
-  // Initialize the layers.
-  std::vector<HeapVertex>* block_vertices = block_layer_->getVertexVector();
+  // Initialize the heap block drawing layer.
+  std::vector<HeapVertex> *block_vertices = block_layer_->getVertexVector();
   heap_history_.heapBlockVerticesForActiveWindow(block_vertices);
   block_layer_->initializeGLStructures(this);
-  //setupHeapblockGLStructures();
-  //setupGridGLStructures();
+
+  // Initialize the event lines drawing layer.
+  std::vector<HeapVertex> *event_vertices = event_layer_->getVertexVector();
+  heap_history_.eventsToVertices(event_vertices);
+  event_layer_->initializeGLStructures(this);
+
+  // Initialize the address lines drawing layer.
+
+  // Initialize the grid lines drawing layer.
 }
 
 QSize GLHeapDiagram::minimumSizeHint() { return QSize(500, 500); }
@@ -68,7 +78,7 @@ bool GLHeapDiagram::screenToHeap(double x, double y, uint32_t *tick,
 }
 
 void GLHeapDiagram::debugDumpVerticesAndMappings() {
-  //heap_history_.getCurrentWindow().setDebug(true);
+  // heap_history_.getCurrentWindow().setDebug(true);
   /*
   int index = 0;
   for (const HeapVertex &vertex : g_vertices) {
@@ -98,45 +108,15 @@ void GLHeapDiagram::paintGL() {
 
   updateHeapToScreenMap();
   debugDumpVerticesAndMappings();
-  const DisplayHeapWindow& heap_window = heap_history_.getCurrentWindow();
-  block_layer_->paintLayer(
-    heap_window.getMinimumTick(),
-    heap_window.getMinimumAddress(),
-    heap_to_screen_matrix_);
-  /*
-    printf("height is %lx, width is %lx\n",
-    heap_history_.getCurrentWindow().height(),
-    heap_history_.getCurrentWindow().width());
-    printf("minimum_address is %lx, maximum_address is %lx\n",
-    heap_history_.getCurrentWindow().getMinimumAddress(),
-    heap_history_.getCurrentWindow().getMaximumAddress());
-    for (const HeapVertex &vertex : g_vertices) {
-      double x, y;
-      heapToScreen(vertex.getX(), vertex.getY(), &x, &y);
-      printf("[!] Vertex is %lx, %lx -> %f %f\n", vertex.getX(), vertex.getY(),
-             x, y);
-    }
-    fflush(stdout);
-  */
+  const DisplayHeapWindow &heap_window = heap_history_.getCurrentWindow();
 
-  /*
-  // Render the grid.
-  updateUnitSquareToHeapMap();
-  grid_shader_->bind();
-  grid_shader_->setUniformValue(uniform_heap_to_screen_map_,
-                                heap_to_screen_matrix_);
-  grid_shader_->setUniformValue(uniform_grid_to_heap_translation_,
-                                unit_square_to_heap_translation_);
-  grid_shader_->setUniformValue(uniform_grid_to_heap_map_,
-                                unit_square_to_heap_matrix_);
-  grid_shader_->setUniformValue(uniform_heap_to_screen_translation_,
-                                heap_to_screen_translation_);
-  {
-    grid_vao_.bind();
-    glDrawArrays(GL_LINES, 0, g_grid_vertices.size() * sizeof(HeapVertex));
-    grid_vao_.release();
-  }
-  grid_shader_->release();*/
+  block_layer_->paintLayer(heap_window.getMinimumTick(),
+                           heap_window.getMinimumAddress(),
+                           heap_to_screen_matrix_);
+
+  event_layer_->paintLayer(heap_window.getMinimumTick(),
+                           heap_window.getMinimumAddress(),
+                           heap_to_screen_matrix_);
 }
 
 void GLHeapDiagram::update() {
@@ -146,8 +126,7 @@ void GLHeapDiagram::update() {
 
 void GLHeapDiagram::resizeGL(int w, int h) { printf("Resize GL was called\n"); }
 
-GLHeapDiagram::~GLHeapDiagram() {
-}
+GLHeapDiagram::~GLHeapDiagram() {}
 
 void GLHeapDiagram::mousePressEvent(QMouseEvent *event) {
   double x = static_cast<double>(event->x()) / this->width();
@@ -166,8 +145,17 @@ void GLHeapDiagram::mousePressEvent(QMouseEvent *event) {
   fflush(stdout);
 
   if (!heap_history_.getBlockAtSlow(address, tick, &current_block, &index)) {
-
-    emit showMessage("Nothing here.");
+    // No block here. Perhaps an event?
+    std::string eventstring;
+    if (heap_history_.getEventAtTick(tick, &eventstring)) {
+      char buf[1024];
+      sprintf(buf, "Event at tick %08.08lx: ", tick);
+      emit showMessage(std::string(buf) + eventstring);
+    } else {
+      char buf[1024];
+      sprintf(buf, "Nothing here at tick %08.08lx and address %016.16lx", tick, address);
+      emit showMessage(std::string(buf));
+    }
   } else {
     emit blockClicked(true, current_block);
   }
@@ -199,7 +187,8 @@ void GLHeapDiagram::wheelEvent(QWheelEvent *event) {
       (heap_history_.getMaximumAddress() - heap_history_.getMinimumAddress()) *
       1.5 * 16;
   long double max_width =
-      (heap_history_.getMaximumTick() - heap_history_.getMinimumTick()) * 1.5 * 16;
+      (heap_history_.getMaximumTick() - heap_history_.getMinimumTick()) * 1.5 *
+      16;
 
   if (!(modifiers & Qt::ControlModifier) && (modifiers & Qt::ShiftModifier)) {
     how_much_y = 1.0 - movement_quantity;

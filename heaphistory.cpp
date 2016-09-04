@@ -23,13 +23,25 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
   uint32_t counter = 0;
   for (const auto &json_element : incoming_data) {
     if (json_element["type"].get<std::string>() == "alloc") {
+      std::string tag = json_element["tag"].get<std::string>();
+      // Remember and de-duplicate the string.
+      auto ret = alloc_or_free_tags_.insert(tag);
       recordMalloc(json_element["address"].get<uint64_t>(),
-                   json_element["size"].get<uint32_t>(), 0);
+                   json_element["size"].get<uint32_t>(), &*(ret.first), 0);
       std::cout << json_element << std::endl;
     } else if (json_element["type"].get<std::string>() == "free") {
-      recordFree(json_element["address"].get<uint64_t>(), 0);
+      std::string tag = json_element["tag"].get<std::string>();
+      auto ret = alloc_or_free_tags_.insert(tag);
+      recordFree(json_element["address"].get<uint64_t>(), &*(ret.first), 0);
     } else if (json_element["type"].get<std::string>() == "event") {
-      printf("[!] Need to parse/display events, no support yet.\n");
+      recordEvent(json_element["tag"].get<std::string>());
+    } else if (json_element["type"].get<std::string>() == "rangefree") {
+      std::string tag = json_element["tag"].get<std::string>();
+      // Remember and de-duplicate the string.
+      auto ret = alloc_or_free_tags_.insert(tag);
+      uint64_t low = json_element["low"].get<uint64_t>();
+      uint64_t high = json_element["high"].get<uint64_t>();
+      recordFreeRange(low, high, &*(ret.first), 0);
     }
     fflush(stdout);
     //if (counter++ > 500)
@@ -70,7 +82,7 @@ void HeapHistory::setCurrentWindow(const HeapWindow &new_window) {
   current_window_.reset(new_window);
 }
 
-void HeapHistory::recordMalloc(uint64_t address, size_t size, uint8_t heap_id) {
+void HeapHistory::recordMalloc(uint64_t address, size_t size, const std::string* tag, uint8_t heap_id) {
   ++current_tick_;
   // Check if there is already a live block at this address.
   if (live_blocks_.find(std::make_pair(address, heap_id)) !=
@@ -79,7 +91,7 @@ void HeapHistory::recordMalloc(uint64_t address, size_t size, uint8_t heap_id) {
     recordMallocConflict(address, size, heap_id);
     return;
   }
-  heap_blocks_.push_back(HeapBlock(current_tick_, size, address));
+  heap_blocks_.push_back(HeapBlock(current_tick_, size, address, tag));
   this->cached_blocks_sorted_by_address_.clear();
 
   live_blocks_[std::make_pair(address, heap_id)] = heap_blocks_.size() - 1;
@@ -94,7 +106,7 @@ void HeapHistory::recordMalloc(uint64_t address, size_t size, uint8_t heap_id) {
   global_area_.minimum_tick_ = 0;
 }
 
-void HeapHistory::recordFree(uint64_t address, uint8_t heap_id) {
+void HeapHistory::recordFree(uint64_t address, const std::string* tag, uint8_t heap_id) {
   // Any event has to clear the sorted HeapBlock cache.
   ++current_tick_;
   std::map<std::pair<uint64_t, uint8_t>, size_t>::iterator current_block =
@@ -105,11 +117,28 @@ void HeapHistory::recordFree(uint64_t address, uint8_t heap_id) {
   }
   size_t index = current_block->second;
   heap_blocks_[index].end_tick_ = current_tick_;
+  heap_blocks_[index].free_tag_ = tag;
   live_blocks_.erase(current_block);
 
   // Set the max tick 5% higher than strictly necessary.
   global_area_.maximum_tick_ =
       (static_cast<double>(current_tick_) * 1.05) + 1.0;
+}
+
+void HeapHistory::recordFreeRange(uint64_t low_end, uint64_t high_end, const std::string* tag, uint8_t heap_id) {
+  // Find the lower boundary.
+  std::map<std::pair<uint64_t, uint8_t>, size_t>::iterator start_block =
+      live_blocks_.lower_bound(std::make_pair(low_end, heap_id));
+  std::map<std::pair<uint64_t, uint8_t>, size_t>::iterator end_block =
+      live_blocks_.upper_bound(std::make_pair(high_end, heap_id));
+  while (start_block != end_block) {
+    uint64_t block_address = start_block->first.first;
+    uint8_t block_heap_id = start_block->first.second;
+    if ((block_heap_id == heap_id) && (block_address >= low_end) && (block_address <= high_end)) {
+      recordFree(block_address, tag, heap_id);
+    }
+    ++start_block;
+  }
 }
 
 void HeapHistory::recordFreeConflict(uint64_t address, uint8_t heap_id) {
@@ -124,8 +153,36 @@ void HeapHistory::recordMallocConflict(uint64_t address, size_t size,
 void HeapHistory::recordRealloc(uint64_t old_address, uint64_t new_address,
                                 size_t size, uint8_t heap_id) {
   // How should realloc relations be visualized?
-  recordFree(old_address, heap_id);
-  recordMalloc(new_address, size, heap_id);
+  auto ret = alloc_or_free_tags_.insert("Free'd on reallocation");
+  recordFree(old_address, &*(ret.first), heap_id);
+  // Should the address perhaps be remembered here?
+  ret = alloc_or_free_tags_.insert("Reallocated block");
+  recordMalloc(new_address, size, &*(ret.first), heap_id);
+}
+
+void HeapHistory::recordEvent(const std::string &event_label) {
+  tick_to_event_strings_[current_tick_] = event_label;
+}
+
+void HeapHistory::eventsToVertices(std::vector<HeapVertex> *vertices) {
+  // Add two vertices with 0 or 1 on the y axis, and the proper tick on the
+  // x axis.
+  for (const auto& event : tick_to_event_strings_) {
+    vertices->push_back(
+          HeapVertex(event.first, 0, QVector3D(1.0, 0.0, 0.0)));
+    vertices->push_back(
+          HeapVertex(event.first, 1, QVector3D(1.0, 0.0, 0.0)));
+    }
+}
+
+bool HeapHistory::getEventAtTick(uint32_t tick, std::string *eventstring) {
+  const auto& iterator = tick_to_event_strings_.find(tick);
+  if (iterator == tick_to_event_strings_.end()) {
+    return false;
+  } else {
+    *eventstring = iterator->second;
+    return true;
+  }
 }
 
 // Write out 6 vertices (for two triangles) into the buffer.

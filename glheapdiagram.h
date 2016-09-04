@@ -69,7 +69,9 @@ private:
   QMatrix2x2 heap_to_screen_matrix_;
 
   std::unique_ptr<GLHeapDiagramLayer> block_layer_;
-
+  std::unique_ptr<GLHeapDiagramLayer> grid_layer_;
+  std::unique_ptr<GLHeapDiagramLayer> event_layer_;
+  std::unique_ptr<GLHeapDiagramLayer> address_layer_;
   // The heap history.
   HeapHistory heap_history_;
 

@@ -12,26 +12,30 @@
 
 // A "layer" -- a collection of bits of data, vertices, shaders etc. that
 // allows easy drawing of an extra layer of the heap diagram.
-class GLHeapDiagramLayer
-{
+class GLHeapDiagramLayer {
 public:
-  GLHeapDiagramLayer(const std::string &vertex_shader_name, const std::string &fragment_shader_name);
+  GLHeapDiagramLayer(const std::string &vertex_shader_name,
+                     const std::string &fragment_shader_name,
+                     bool is_line_layer);
   ~GLHeapDiagramLayer();
-  void initializeGLStructures(QOpenGLFunctions* parent);
-  void paintLayer(ivec2 minimum_tick, ivec3 maximum_tick, const QMatrix2x2& heap_to_screen);
+  void initializeGLStructures(QOpenGLFunctions *parent);
+  void paintLayer(ivec2 minimum_tick, ivec3 maximum_tick,
+                  const QMatrix2x2 &heap_to_screen);
 
   // Get a pointer to the HeapVertex vector so it can be filled.
-  std::vector<HeapVertex>* getVertexVector() { return &layer_vertices_; }
+  std::vector<HeapVertex> *getVertexVector() { return &layer_vertices_; }
+
 private:
   void setupStandardUniforms();
   // Helper functions to set the uniforms for the shaders.
   void setTickBaseUniforms(int32_t x, int32_t y);
   void setHeapBaseUniforms(int32_t x, int32_t y, int32_t z);
-  void setHeapToScreenMatrix(const QMatrix2x2& heap_to_screen);
+  void setHeapToScreenMatrix(const QMatrix2x2 &heap_to_screen);
 
   std::string vertex_shader_name_;
   std::string fragment_shader_name_;
   bool is_initialized_ = false;
+  bool is_line_layer_ = false;
 
   // The vertices for this layer.
   std::vector<HeapVertex> layer_vertices_;
@@ -53,7 +57,6 @@ private:
   QOpenGLBuffer layer_vertex_buffer_;
   QOpenGLVertexArrayObject layer_vao_;
   std::unique_ptr<QOpenGLShaderProgram> layer_shader_program_;
-
 };
 
 #endif // GLHEAPDIAGRAMLAYER_H

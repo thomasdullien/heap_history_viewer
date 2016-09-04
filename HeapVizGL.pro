@@ -20,7 +20,9 @@ SOURCES += main.cpp \
     heaphistory.cpp \
     displayheapwindow.cpp \
     heapwindow.cpp \
-    glheapdiagramlayer.cpp
+    glheapdiagramlayer.cpp \
+    gridlayer.cpp \
+    linearbrightnesscolorscale.cpp
 
 HEADERS  += heapvizwindow.h \
     glheapdiagram.h \
@@ -31,7 +33,9 @@ HEADERS  += heapvizwindow.h \
     json.hpp \
     displayheapwindow.h \
     heapwindow.h \
-    glheapdiagramlayer.h
+    glheapdiagramlayer.h \
+    gridlayer.h \
+    linearbrightnesscolorscale.h
 
 FORMS    += heapvizwindow.ui
 

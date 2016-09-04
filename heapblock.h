@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <string>
 
 #include "vertex.h"
 
@@ -11,7 +12,7 @@ class HeapBlock {
 public:
   HeapBlock();
   // Constructor for the most common case: Well-defined start, unknown end.
-  HeapBlock(uint32_t start_tick, uint32_t size, uint64_t address);
+  HeapBlock(uint32_t start_tick, uint32_t size, uint64_t address, const std::string* alloctag);
   // Constructor for the case that the end is known.
   HeapBlock(uint32_t start_tick, uint32_t end_tick, uint32_t size,
             uint64_t address);
@@ -21,21 +22,24 @@ public:
   // will be subtracted from the address value before writing the vertices to
   // align the lowest recorded allocation with uint64_t 0. This should
   // hopefully help reduce rounding errors / issues.
-  void toVertices(uint32_t max_tick, std::vector<HeapVertex>* output_vertices) const;
+  void toVertices(uint32_t max_tick, std::vector<HeapVertex> *output_vertices,
+                  bool debug = false) const;
   // Check if a given point is inside the current block.
   bool contains(uint32_t tick, uint64_t address) {
 
     return (tick >= start_tick_) && (tick <= end_tick_) &&
            (address >= address_) && (address <= address_ + size_);
   }
-  bool wasFreed() {
-    return end_tick_ != std::numeric_limits<uint32_t>::max();
-  }
+  bool wasFreed() { return end_tick_ != std::numeric_limits<uint32_t>::max(); }
 
   uint32_t start_tick_;
   uint32_t end_tick_;
   uint32_t size_;
   uint64_t address_;
+  const std::string* allocation_tag_;
+  const std::string* free_tag_;
 };
+
+std::string getBlockInformationAsString(const HeapBlock& block);
 
 #endif // HEAPBLOCK_H

@@ -200,12 +200,15 @@ void main(void)
                                         scale_heap_to_screen[0][0]);
   float final_x = temp_x * scale_heap_to_screen[0][0];
 
-  float final_y = float(position.y);
+  float final_y = -1.0;
+  if (position.y != 0) {
+    final_y = 1.0;
+  }
   final_x = 2 * final_x - 1;
   // ==========================================================================
   // End of mandatory valid GLSL part.
   // ==========================================================================
 
   gl_Position = vec4(final_x, final_y, 0.0, 1.0);
-  vColor = vec4(color, 1.0);
+  vColor = vec4(1.0, 0.0, 0.0, 0.6);
 }

@@ -22,14 +22,7 @@ void HeapVizWindow::keyPressEvent(QKeyEvent *e) {
 }
 
 void HeapVizWindow::blockClicked(bool b, HeapBlock block) {
-  char buffer[255];
-  if (b) {
-    sprintf(buffer, "Block address: %lx Size: %lx (%d) Tick: %d", block.address_,
-          block.size_, block.size_, block.start_tick_);
-  } else {
-    sprintf(buffer, "No block.");
-  }
-  statusBar()->showMessage(buffer);
+  statusBar()->showMessage( b ? getBlockInformationAsString(block).c_str() : "No block");
 }
 
 void HeapVizWindow::showMessage(std::string message) {

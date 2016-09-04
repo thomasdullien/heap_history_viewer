@@ -1,6 +1,5 @@
 #include "gridlayer.h"
 
-GridLayer::GridLayer()
-{
+GridLayer::GridLayer() : GLHeapDiagramLayer("foobar", "foobar", true) {
 
 }

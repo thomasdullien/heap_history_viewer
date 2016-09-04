@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include <map>
+#include <set>
 #include <vector>
 
 #include <QVector3D>
@@ -46,11 +47,11 @@ public:
 
   // Record a memory allocation event. The code supports up to 256 different
   // heaps.
-  void recordMalloc(uint64_t address, size_t size, uint8_t heap_id = 0);
-  void recordFree(uint64_t address, uint8_t heap_id = 0);
+  void recordMalloc(uint64_t address, size_t size, const std::string* alloc_tag, uint8_t heap_id = 0);
+  void recordFree(uint64_t address, const std::string* tag, uint8_t heap_id = 0);
   void recordRealloc(uint64_t old_address, uint64_t new_address, size_t size,
                      uint8_t heap_id);
-  void recordEvent();
+  void recordEvent(const std::string& event_label);
 
   // Dump out triangles for the current window of heap events.
   size_t heapBlockVerticesForActiveWindow(std::vector<HeapVertex> *vertices);
@@ -64,9 +65,12 @@ public:
   void zoomToPoint(double dx, double dy, double how_much_x, double how_much_y,
                    long double max_height, long double max_width);
 
+  void eventsToVertices(std::vector<HeapVertex> *vertices);
+  bool getEventAtTick(uint32_t tick, std::string* eventstring);
 private:
   void recordMallocConflict(uint64_t address, size_t size, uint8_t heap_id);
   void recordFreeConflict(uint64_t address, uint8_t heap_id);
+  void recordFreeRange(uint64_t low_end, uint64_t high_end, const std::string *tag, uint8_t heap_id);
   bool isBlockActive(const HeapBlock &block);
   // Dumps 6 vertices for 2 triangles for a block into the output vector.
   // TODO(thomasdullien): Optimize this to only dump 4 vertices?
@@ -92,6 +96,11 @@ private:
   std::map<std::pair<uint64_t, uint8_t>, size_t> live_blocks_;
   // A vector of ticks that records the conflicts in heap logic.
   std::vector<HeapConflict> conflicts_;
+
+  // A tick-to-string mapping for events.
+  std::map<uint32_t, std::string> tick_to_event_strings_;
+
+  std::set<std::string> alloc_or_free_tags_;
 };
 
 #endif // HEAPHISTORY_H

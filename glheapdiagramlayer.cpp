@@ -3,11 +3,13 @@
 
 #include "glheapdiagramlayer.h"
 
-GLHeapDiagramLayer::GLHeapDiagramLayer(const std::string &vertex_shader_name,
-                                       const std::string &fragment_shader_name)
+GLHeapDiagramLayer::GLHeapDiagramLayer(
+    const std::string &vertex_shader_name,
+    const std::string &fragment_shader_name, bool is_line_layer)
     : vertex_shader_name_(vertex_shader_name),
       fragment_shader_name_(fragment_shader_name),
-      layer_shader_program_(new QOpenGLShaderProgram()) {}
+      layer_shader_program_(new QOpenGLShaderProgram()),
+      is_line_layer_(is_line_layer) {}
 
 GLHeapDiagramLayer::~GLHeapDiagramLayer() {
   if (is_initialized_) {
@@ -16,7 +18,7 @@ GLHeapDiagramLayer::~GLHeapDiagramLayer() {
   }
 }
 
-void GLHeapDiagramLayer::initializeGLStructures(QOpenGLFunctions* parent) {
+void GLHeapDiagramLayer::initializeGLStructures(QOpenGLFunctions *parent) {
   // Load the shaders.
   layer_shader_program_->addShaderFromSourceFile(QOpenGLShader::Vertex,
                                                  vertex_shader_name_.c_str());
@@ -32,7 +34,7 @@ void GLHeapDiagramLayer::initializeGLStructures(QOpenGLFunctions* parent) {
 
   // The vertex buffer ought to be filled now..
   layer_vertex_buffer_.allocate(&(layer_vertices_[0]),
-                               layer_vertices_.size() * sizeof(HeapVertex));
+                                layer_vertices_.size() * sizeof(HeapVertex));
 
   setupStandardUniforms();
 
@@ -49,7 +51,8 @@ void GLHeapDiagramLayer::initializeGLStructures(QOpenGLFunctions* parent) {
   layer_shader_program_->setAttributeBuffer(
       1, GL_FLOAT, HeapVertex::colorOffset(), HeapVertex::ColorTupleSize,
       HeapVertex::stride());
-  parent->glBindAttribLocation(layer_shader_program_->programId(), 0, "position");
+  parent->glBindAttribLocation(layer_shader_program_->programId(), 0,
+                               "position");
   parent->glBindAttribLocation(layer_shader_program_->programId(), 1, "color");
 
   // Unbind.
@@ -96,7 +99,8 @@ void GLHeapDiagramLayer::paintLayer(ivec2 tick, ivec3 address,
 
   {
     layer_vao_.bind();
-    glDrawArrays(GL_TRIANGLES, 0, layer_vertices_.size() * sizeof(HeapVertex));
+    glDrawArrays(is_line_layer_ ? GL_LINES : GL_TRIANGLES, 0,
+                 layer_vertices_.size() * sizeof(HeapVertex));
     layer_vao_.release();
   }
   layer_shader_program_->release();
