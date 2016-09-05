@@ -5,5 +5,6 @@
         <file>grid.frag</file>
         <file>grid.vert</file>
         <file>event_shader.vert</file>
+        <file>address_shader.vert</file>
     </qresource>
 </RCC>

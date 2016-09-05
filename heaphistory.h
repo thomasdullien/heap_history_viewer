@@ -52,6 +52,7 @@ public:
   void recordRealloc(uint64_t old_address, uint64_t new_address, size_t size,
                      uint8_t heap_id);
   void recordEvent(const std::string& event_label);
+  void recordAddress(uint64_t address, const std::string& label);
 
   // Dump out triangles for the current window of heap events.
   size_t heapBlockVerticesForActiveWindow(std::vector<HeapVertex> *vertices);
@@ -66,6 +67,7 @@ public:
                    long double max_height, long double max_width);
 
   void eventsToVertices(std::vector<HeapVertex> *vertices);
+  void addressesToVertices(std::vector<HeapVertex> *vertices);
   bool getEventAtTick(uint32_t tick, std::string* eventstring);
 private:
   void recordMallocConflict(uint64_t address, size_t size, uint8_t heap_id);
@@ -99,6 +101,9 @@ private:
 
   // A tick-to-string mapping for events.
   std::map<uint32_t, std::string> tick_to_event_strings_;
+
+  // An address-to-string mapping for horizontal lines.
+  std::map<uint64_t, std::string> address_to_address_strings_;
 
   std::set<std::string> alloc_or_free_tags_;
 };

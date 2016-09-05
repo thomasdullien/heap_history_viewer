@@ -190,21 +190,32 @@ void main(void)
   // =========================================================================
   //
   // Read the X (tick) and Y (address) coordinate of the current point.
-  ivec2 tick = Load32BitLeftShiftedBy4Into64Bit(position.x);
-  // Lowest 4 bit represent fractional component, again.
-  ivec2 minimum_visible_tick= ivec2(visible_tick_base_A, visible_tick_base_B);
-  // Translate the x / tick coordinate to be aligned with 0.
-  ivec2 tick_coordinate_translated = Sub64(tick, minimum_visible_tick);
+  ivec3 address = Load64BitLeftShiftedBy4Into96Bit(position.y, position.z);
 
-  float temp_x = Multiply64BitWithFloat(tick_coordinate_translated,
-                                        scale_heap_to_screen[0][0]);
-  float final_x = temp_x * scale_heap_to_screen[0][0];
+  // Get the base of the heap in the displayed window. This is a 96-bit number
+  // where the lowest 4 bit represent a fractional component, the rest is a
+  // normal 92-bit integer.
+  ivec3 heap_base =
+      ivec3(visible_heap_base_A, visible_heap_base_B, visible_heap_base_C);
 
-  float final_y = -1.0;
-  if (position.y != 0) {
-    final_y = 1.0;
+  // Translate the y / address coordinate of the heap so that the left lower
+  // corner of the visible heap window aligns with 0.
+  ivec3 address_coordinate_translated = Sub96(address, heap_base);
+
+  // Multiply the y coordinate with the y entry of the transformation matrix.
+  // To avoid a degenerate matrix, C++ code supplies a matrix containing the
+  // square roots of the actual matrix to the shader code, so apply the float
+  // twice
+  float temp_y = Multiply96BitWithFloat(address_coordinate_translated,
+                                        scale_heap_to_screen[1][1]);
+  float final_y = temp_y * scale_heap_to_screen[1][1];
+
+  final_y = 2 * final_y - 1;
+
+  float final_x = -1.0;
+  if (position.x != 0) {
+    final_x = 1.0;
   }
-  final_x = 2 * final_x - 1;
   // ==========================================================================
   // End of mandatory valid GLSL part.
   // ==========================================================================

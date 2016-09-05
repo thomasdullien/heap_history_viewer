@@ -17,7 +17,9 @@ GLHeapDiagram::GLHeapDiagram(QWidget *parent)
     : QOpenGLWidget(parent), block_layer_(new GLHeapDiagramLayer(
                                  ":/simple.vert", ":/simple.frag", false)),
       event_layer_(new GLHeapDiagramLayer(":/event_shader.vert",
-                                          ":/simple.frag", true)) {
+                                          ":/simple.frag", true)),
+      address_layer_(new GLHeapDiagramLayer(":/address_shader.vert",
+                                            ":/simple.frag", true)) {
 
   //  QObject::connect(this, SIGNAL(blockClicked), parent->parent(),
   //  SLOT(blockClicked));
@@ -45,6 +47,9 @@ void GLHeapDiagram::initializeGL() {
   event_layer_->initializeGLStructures(this);
 
   // Initialize the address lines drawing layer.
+  std::vector<HeapVertex> *address_vertices = address_layer_->getVertexVector();
+  heap_history_.addressesToVertices(address_vertices);
+  address_layer_->initializeGLStructures(this);
 
   // Initialize the grid lines drawing layer.
 }
@@ -114,9 +119,14 @@ void GLHeapDiagram::paintGL() {
                            heap_window.getMinimumAddress(),
                            heap_to_screen_matrix_);
 
+  glLineWidth(1.5f);
   event_layer_->paintLayer(heap_window.getMinimumTick(),
                            heap_window.getMinimumAddress(),
                            heap_to_screen_matrix_);
+
+  address_layer_->paintLayer(heap_window.getMinimumTick(),
+                             heap_window.getMinimumAddress(),
+                             heap_to_screen_matrix_);
 }
 
 void GLHeapDiagram::update() {

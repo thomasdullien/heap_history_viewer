@@ -22,26 +22,30 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
 
   uint32_t counter = 0;
   for (const auto &json_element : incoming_data) {
-    if (json_element["type"].get<std::string>() == "alloc") {
-      std::string tag = json_element["tag"].get<std::string>();
+    std::string type = json_element["type"].get<std::string>();
+    std::string tag = json_element["tag"].get<std::string>();
+    auto ret = alloc_or_free_tags_.insert(tag);
+    const std::string* de_duped_tag = &*(ret.first);
+
+    if (type == "alloc") {
       // Remember and de-duplicate the string.
       auto ret = alloc_or_free_tags_.insert(tag);
       recordMalloc(json_element["address"].get<uint64_t>(),
-                   json_element["size"].get<uint32_t>(), &*(ret.first), 0);
+                   json_element["size"].get<uint32_t>(), de_duped_tag, 0);
       std::cout << json_element << std::endl;
-    } else if (json_element["type"].get<std::string>() == "free") {
-      std::string tag = json_element["tag"].get<std::string>();
+    } else if (type == "free") {
       auto ret = alloc_or_free_tags_.insert(tag);
-      recordFree(json_element["address"].get<uint64_t>(), &*(ret.first), 0);
-    } else if (json_element["type"].get<std::string>() == "event") {
-      recordEvent(json_element["tag"].get<std::string>());
-    } else if (json_element["type"].get<std::string>() == "rangefree") {
-      std::string tag = json_element["tag"].get<std::string>();
+      recordFree(json_element["address"].get<uint64_t>(), de_duped_tag, 0);
+    } else if (type == "event") {
+      recordEvent(tag);
+    } else if (type == "rangefree") {
       // Remember and de-duplicate the string.
       auto ret = alloc_or_free_tags_.insert(tag);
       uint64_t low = json_element["low"].get<uint64_t>();
       uint64_t high = json_element["high"].get<uint64_t>();
-      recordFreeRange(low, high, &*(ret.first), 0);
+      recordFreeRange(low, high, de_duped_tag, 0);
+    } else if (type == "address") {
+      recordAddress(json_element["address"].get<uint64_t>(), tag);
     }
     fflush(stdout);
     //if (counter++ > 500)
@@ -164,6 +168,10 @@ void HeapHistory::recordEvent(const std::string &event_label) {
   tick_to_event_strings_[current_tick_] = event_label;
 }
 
+void HeapHistory::recordAddress(uint64_t address, const std::string &label) {
+  address_to_address_strings_[address] = label;
+}
+
 void HeapHistory::eventsToVertices(std::vector<HeapVertex> *vertices) {
   // Add two vertices with 0 or 1 on the y axis, and the proper tick on the
   // x axis.
@@ -172,6 +180,17 @@ void HeapHistory::eventsToVertices(std::vector<HeapVertex> *vertices) {
           HeapVertex(event.first, 0, QVector3D(1.0, 0.0, 0.0)));
     vertices->push_back(
           HeapVertex(event.first, 1, QVector3D(1.0, 0.0, 0.0)));
+    }
+}
+
+void HeapHistory::addressesToVertices(std::vector<HeapVertex> *vertices) {
+  // Add two vertices with 0 or 1 on the y axis, and the proper tick on the
+  // x axis.
+  for (const auto& event : address_to_address_strings_) {
+    vertices->push_back(
+          HeapVertex(0, event.first, QVector3D(1.0, 0.0, 0.0)));
+    vertices->push_back(
+          HeapVertex(1, event.first, QVector3D(1.0, 0.0, 0.0)));
     }
 }
 
