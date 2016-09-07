@@ -14,7 +14,9 @@ HeapConflict::HeapConflict(uint32_t tick, uint64_t address, bool alloc)
 // The code for the heap history.
 HeapHistory::HeapHistory()
     : current_tick_(0),
-      global_area_(std::numeric_limits<uint64_t>::max(), 0, 0, 1) {}
+      global_area_(std::numeric_limits<uint64_t>::max(), 0, 0, 1) {
+  setCurrentWindowToGlobal();
+}
 
 void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
   nlohmann::json incoming_data;
@@ -43,6 +45,7 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
       auto ret = alloc_or_free_tags_.insert(tag);
       uint64_t low = json_element["low"].get<uint64_t>();
       uint64_t high = json_element["high"].get<uint64_t>();
+      std::cout << json_element << std::endl;
       recordFreeRange(low, high, de_duped_tag, 0);
     } else if (type == "address") {
       recordAddress(json_element["address"].get<uint64_t>(), tag);
@@ -135,13 +138,20 @@ void HeapHistory::recordFreeRange(uint64_t low_end, uint64_t high_end, const std
       live_blocks_.lower_bound(std::make_pair(low_end, heap_id));
   std::map<std::pair<uint64_t, uint8_t>, size_t>::iterator end_block =
       live_blocks_.upper_bound(std::make_pair(high_end, heap_id));
-  while (start_block != end_block) {
+  std::vector<std::pair<uint64_t, uint8_t>> blocks_to_free;
+
+  while ((start_block != end_block) && (start_block != live_blocks_.end())) {
     uint64_t block_address = start_block->first.first;
     uint8_t block_heap_id = start_block->first.second;
+    // We cannot call recordFree inside the loop because modifying the live_block_ map would invalidate our
+    // iterators.
     if ((block_heap_id == heap_id) && (block_address >= low_end) && (block_address <= high_end)) {
-      recordFree(block_address, tag, heap_id);
+      blocks_to_free.push_back(std::make_pair(block_address, heap_id));
     }
     ++start_block;
+  }
+  for (const auto& block : blocks_to_free) {
+    recordFree(block.first, tag, block.second);
   }
 }
 
