@@ -229,13 +229,10 @@ void HeapHistory::eventsToVertices(std::vector<HeapVertex> *vertices) {
   // x axis.
   for (const auto &event : tick_to_event_strings_) {
     uint32_t color = event.second.first;
-printf("color is %lx\n", color);
-printf("tag is %s\n", event.second.second.c_str());
     float red = static_cast<float>((color & 0xFF0000) >> 16) / 255.0;
     float green = static_cast<float>((color & 0xFF00) >> 8) / 255.0;
     float blue = static_cast<float>(color & 0xFF) / 255.0;
 
-//    printf("red: %f green: %f blue: %f\n", red, green, blue);
     vertices->push_back(HeapVertex(event.first, 0, QVector3D(red, green, blue)));
     vertices->push_back(HeapVertex(event.first, 1, QVector3D(red, green, blue)));
   }
@@ -257,9 +254,16 @@ void HeapHistory::addressesToVertices(std::vector<HeapVertex> *vertices) {
 }
 
 bool HeapHistory::getEventAtTick(uint32_t tick, std::string *eventstring) {
-  const auto &iterator = tick_to_event_strings_.find(tick);
+  const auto iterator = tick_to_event_strings_.find(tick);
   if (iterator == tick_to_event_strings_.end()) {
-    return false;
+    // Try an approximate search.
+    const auto iterator_approx = tick_to_event_strings_.lower_bound(tick-300);
+    if (abs(tick - iterator_approx->first) < 300) {
+      *eventstring = iterator_approx->second.second;
+      return true;
+    } else {
+      return false;
+    }
   } else {
     *eventstring = iterator->second.second;
     return true;
