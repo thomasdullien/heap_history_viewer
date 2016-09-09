@@ -15,11 +15,14 @@ class HeapVizWindow : public QMainWindow {
   Q_OBJECT
 
 public:
-  explicit HeapVizWindow(QWidget *parent = 0);
+  explicit HeapVizWindow(const std::string* inputfile=nullptr, QWidget *parent = 0);
   ~HeapVizWindow();
 
 protected:
   void keyPressEvent(QKeyEvent *e);
+
+signals:
+  void setFileToDisplay(QString filename);
 
 public slots:
   void blockClicked(bool, HeapBlock);

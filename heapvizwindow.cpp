@@ -2,11 +2,15 @@
 #include "ui_heapvizwindow.h"
 #include <QStatusBar>
 
-HeapVizWindow::HeapVizWindow(QWidget *parent)
+HeapVizWindow::HeapVizWindow(const std::string* inputfile, QWidget *parent)
     : QMainWindow(parent), ui(new Ui::HeapVizWindow) {
   ui->setupUi(this);
 
   statusBar()->showMessage("Initialized Main Window");
+
+  if (inputfile != nullptr) {
+    emit setFileToDisplay(QString(inputfile->c_str()));
+  }
 }
 
 void HeapVizWindow::update() { printf("Update called"); }

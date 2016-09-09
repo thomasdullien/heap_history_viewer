@@ -29,6 +29,7 @@ signals:
   void showMessage(std::string);
 
 public slots:
+  void setFileToDisplay(QString filename);
 
 protected slots:
   void update();
@@ -58,9 +59,15 @@ private:
   void getScaleFromScreenToHeap(double* scale_x, double* scale_y);
   bool screenToHeap(double, double, uint32_t* tick, uint64_t* address);
   //void heapToScreen(uint32_t tick, uint64_t address, double*, double*);
+  void loadFileInternal();
 
   void setHeapBaseUniforms();
   void setTickBaseUniforms();
+
+  std::string file_to_load_;
+
+  // Gets set to true after the initializeGL() method runs.
+  bool is_GL_initialized_;
 
   // Due to limited precision of floats, a straight mapping void setTickBaseUniforms();
   // heap to the screen space can have a degenerate matrix with a zero

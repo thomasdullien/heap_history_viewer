@@ -9,6 +9,8 @@
 
 #include <QVector3D>
 
+#include "json.hpp"
+
 #include "displayheapwindow.h"
 #include "heapblock.h"
 #include "heapwindow.h"
@@ -81,6 +83,7 @@ private:
   // When a new block has been put into the vector, this function needs to be
   // called to update the internal data structures for fast block search.
   void updateCachedSortedIterators();
+  bool hasMandatoryJSONElementFields(const nlohmann::json &json_element);
 
   std::vector<std::vector<HeapBlock>::iterator>
       cached_blocks_sorted_by_address_;

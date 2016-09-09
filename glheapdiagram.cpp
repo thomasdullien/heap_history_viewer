@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include <QApplication>
+#include <QFileDialog>
 #include <QtGlobal>
 #include <QOpenGLShaderProgram>
 #include <QMouseEvent>
@@ -16,13 +17,43 @@
 GLHeapDiagram::GLHeapDiagram(QWidget *parent)
     : QOpenGLWidget(parent), block_layer_(new GLHeapDiagramLayer(
                                  ":/simple.vert", ":/simple.frag", false)),
-      event_layer_(new GLHeapDiagramLayer(":/event_shader.vert",
-                                          ":/simple.frag", true)),
+      event_layer_(
+          new GLHeapDiagramLayer(":/event_shader.vert", ":/simple.frag", true)),
       address_layer_(new GLHeapDiagramLayer(":/address_shader.vert",
-                                            ":/simple.frag", true)) {
+                                            ":/simple.frag", true)),
+      is_GL_initialized_(false), file_to_load_("") {
 
   //  QObject::connect(this, SIGNAL(blockClicked), parent->parent(),
   //  SLOT(blockClicked));
+}
+
+void GLHeapDiagram::loadFileInternal() {
+  if (is_GL_initialized_) {
+    // Load the heap history.
+    if (file_to_load_ != "") {
+      std::ifstream ifs(file_to_load_, std::fstream::in);
+      heap_history_.LoadFromJSONStream(ifs);
+    }
+    heap_history_.setCurrentWindowToGlobal();
+
+    // Initialize the heap block drawing layer.
+    std::vector<HeapVertex> *block_vertices = block_layer_->getVertexVector();
+    heap_history_.heapBlockVerticesForActiveWindow(block_vertices);
+    block_layer_->initializeGLStructures(this);
+
+    // Initialize the event lines drawing layer.
+    std::vector<HeapVertex> *event_vertices = event_layer_->getVertexVector();
+    heap_history_.eventsToVertices(event_vertices);
+    event_layer_->initializeGLStructures(this);
+
+    // Initialize the address lines drawing layer.
+    std::vector<HeapVertex> *address_vertices =
+        address_layer_->getVertexVector();
+    heap_history_.addressesToVertices(address_vertices);
+    address_layer_->initializeGLStructures(this);
+
+    // Initialize the grid lines drawing layer.
+  }
 }
 
 void GLHeapDiagram::initializeGL() {
@@ -31,30 +62,17 @@ void GLHeapDiagram::initializeGL() {
   glEnable(GL_CULL_FACE);
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-  // Load the heap history.
-  std::ifstream ifs("/tmp/heap.json", std::fstream::in);
-  heap_history_.LoadFromJSONStream(ifs);
-  heap_history_.setCurrentWindowToGlobal();
+  is_GL_initialized_ = true;
 
-  // Initialize the heap block drawing layer.
-  std::vector<HeapVertex> *block_vertices = block_layer_->getVertexVector();
-  heap_history_.heapBlockVerticesForActiveWindow(block_vertices);
-  block_layer_->initializeGLStructures(this);
-
-  // Initialize the event lines drawing layer.
-  std::vector<HeapVertex> *event_vertices = event_layer_->getVertexVector();
-  heap_history_.eventsToVertices(event_vertices);
-  event_layer_->initializeGLStructures(this);
-
-  // Initialize the address lines drawing layer.
-  std::vector<HeapVertex> *address_vertices = address_layer_->getVertexVector();
-  heap_history_.addressesToVertices(address_vertices);
-  address_layer_->initializeGLStructures(this);
-
-  // Initialize the grid lines drawing layer.
+  loadFileInternal();
 }
 
 QSize GLHeapDiagram::minimumSizeHint() { return QSize(500, 500); }
+
+void GLHeapDiagram::setFileToDisplay(QString filename) {
+  file_to_load_ = filename.toStdString();
+  loadFileInternal();
+}
 
 QSize GLHeapDiagram::sizeHint() { return QSize(1024, 1024); }
 
@@ -163,7 +181,8 @@ void GLHeapDiagram::mousePressEvent(QMouseEvent *event) {
       emit showMessage(std::string(buf) + eventstring);
     } else {
       char buf[1024];
-      sprintf(buf, "Nothing here at tick %08.08lx and address %016.16lx", tick, address);
+      sprintf(buf, "Nothing here at tick %08.08lx and address %016.16lx", tick,
+              address);
       emit showMessage(std::string(buf));
     }
   } else {

@@ -98,6 +98,7 @@
     <slot>setZRotation()</slot>
     <slot>setYRotation()</slot>
     <slot>setXRotation()</slot>
+    <slot>setFileToDisplay(QString)</slot>
    </slots>
   </customwidget>
  </customwidgets>
@@ -135,8 +136,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>HeapVizWindow</sender>
+   <signal>setFileToDisplay(QString)</signal>
+   <receiver>heap_diagram</receiver>
+   <slot>setFileToDisplay(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>394</x>
+     <y>400</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>394</x>
+     <y>408</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
+  <signal>setFileToDisplay(QString)</signal>
   <slot>blockClicked(bool,HeapBlock)</slot>
   <slot>showMessage(std::string)</slot>
  </slots>

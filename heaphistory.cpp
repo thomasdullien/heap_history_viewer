@@ -18,41 +18,63 @@ HeapHistory::HeapHistory()
   setCurrentWindowToGlobal();
 }
 
+bool HeapHistory::hasMandatoryJSONElementFields(const nlohmann::json& json_element) {
+  static std::map<std::string, std::vector<std::string>> mandatory_fields = {
+    {"alloc", {"address", "size"}},
+    {"free", {"address"}},
+    {"event", {}},
+    {"rangefree", {"low", "high"}},
+    {"address", {"address"}}
+  };
+  if (json_element.find("type") == json_element.end()) {
+    std::cout << "[E] Failed to find type field" << std::endl;
+    return false;
+  }
+  std::string type = json_element["type"].get<std::string>();
+  std::vector<std::string> mandatory = mandatory_fields[type];
+  for (const std::string& field : mandatory) {
+    if (json_element.find(field) == json_element.end()) {
+      std::cout << "[E] Failed to find mandatory field " << field << " for type " << type << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+
 void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
   nlohmann::json incoming_data;
   incoming_data << jsondata;
 
   uint32_t counter = 0;
   for (const auto &json_element : incoming_data) {
+    if (!hasMandatoryJSONElementFields(json_element)) {
+      continue;
+    }
+    // The "type" field is mandatory for every event.
     std::string type = json_element["type"].get<std::string>();
-    std::string tag = json_element["tag"].get<std::string>();
+    std::string tag = "";
+    if (json_element.find("tag") != json_element.end()) {
+      tag = json_element["tag"].get<std::string>();
+    }
+
     auto ret = alloc_or_free_tags_.insert(tag);
     const std::string* de_duped_tag = &*(ret.first);
 
     if (type == "alloc") {
-      // Remember and de-duplicate the string.
-      auto ret = alloc_or_free_tags_.insert(tag);
       recordMalloc(json_element["address"].get<uint64_t>(),
                    json_element["size"].get<uint32_t>(), de_duped_tag, 0);
-      std::cout << json_element << std::endl;
     } else if (type == "free") {
-      auto ret = alloc_or_free_tags_.insert(tag);
       recordFree(json_element["address"].get<uint64_t>(), de_duped_tag, 0);
     } else if (type == "event") {
       recordEvent(tag);
     } else if (type == "rangefree") {
-      // Remember and de-duplicate the string.
-      auto ret = alloc_or_free_tags_.insert(tag);
       uint64_t low = json_element["low"].get<uint64_t>();
       uint64_t high = json_element["high"].get<uint64_t>();
-      std::cout << json_element << std::endl;
       recordFreeRange(low, high, de_duped_tag, 0);
     } else if (type == "address") {
       recordAddress(json_element["address"].get<uint64_t>(), tag);
     }
     fflush(stdout);
-    //if (counter++ > 500)
-    //  break;
   }
   printf("heap_blocks_.size() is %d\n", heap_blocks_.size());
   fflush(stdout);
