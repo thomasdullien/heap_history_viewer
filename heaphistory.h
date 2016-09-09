@@ -53,8 +53,8 @@ public:
   void recordFree(uint64_t address, const std::string* tag, uint8_t heap_id = 0);
   void recordRealloc(uint64_t old_address, uint64_t new_address, size_t size,
                      uint8_t heap_id);
-  void recordEvent(const std::string& event_label);
-  void recordAddress(uint64_t address, const std::string& label);
+  void recordEvent(const std::string& event_label, const std::string& color);
+  void recordAddress(uint64_t address, const std::string& label, const std::string& color);
 
   // Dump out triangles for the current window of heap events.
   size_t heapBlockVerticesForActiveWindow(std::vector<HeapVertex> *vertices);
@@ -102,13 +102,14 @@ private:
   // A vector of ticks that records the conflicts in heap logic.
   std::vector<HeapConflict> conflicts_;
 
-  // A tick-to-string mapping for events.
-  std::map<uint32_t, std::string> tick_to_event_strings_;
+  // A tick-to-color/string mapping for events.
+  std::map<uint32_t, std::pair<uint32_t, std::string>> tick_to_event_strings_;
 
-  // An address-to-string mapping for horizontal lines.
-  std::map<uint64_t, std::string> address_to_address_strings_;
+  // An address-to-color/string mapping for horizontal lines.
+  std::map<uint64_t, std::pair<uint32_t, std::string>> address_to_address_strings_;
 
   std::set<std::string> alloc_or_free_tags_;
+  uint32_t ColorStringToUint32(const std::string &color);
 };
 
 #endif // HEAPHISTORY_H

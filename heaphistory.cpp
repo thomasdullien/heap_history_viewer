@@ -18,23 +18,24 @@ HeapHistory::HeapHistory()
   setCurrentWindowToGlobal();
 }
 
-bool HeapHistory::hasMandatoryJSONElementFields(const nlohmann::json& json_element) {
+bool HeapHistory::hasMandatoryJSONElementFields(
+    const nlohmann::json &json_element) {
   static std::map<std::string, std::vector<std::string>> mandatory_fields = {
-    {"alloc", {"address", "size"}},
-    {"free", {"address"}},
-    {"event", {}},
-    {"rangefree", {"low", "high"}},
-    {"address", {"address"}}
-  };
+      {"alloc", {"address", "size"}},
+      {"free", {"address"}},
+      {"event", {}},
+      {"rangefree", {"low", "high"}},
+      {"address", {"address"}}};
   if (json_element.find("type") == json_element.end()) {
     std::cout << "[E] Failed to find type field" << std::endl;
     return false;
   }
   std::string type = json_element["type"].get<std::string>();
   std::vector<std::string> mandatory = mandatory_fields[type];
-  for (const std::string& field : mandatory) {
+  for (const std::string &field : mandatory) {
     if (json_element.find(field) == json_element.end()) {
-      std::cout << "[E] Failed to find mandatory field " << field << " for type " << type << std::endl;
+      std::cout << "[E] Failed to find mandatory field " << field
+                << " for type " << type << std::endl;
       return false;
     }
   }
@@ -56,9 +57,14 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
     if (json_element.find("tag") != json_element.end()) {
       tag = json_element["tag"].get<std::string>();
     }
+    // A not-too-intrusive gray by default.
+    std::string color = "#B0B0B0";
+    if (json_element.find("color") != json_element.end()) {
+      color = json_element["color"].get<std::string>();
+    }
 
     auto ret = alloc_or_free_tags_.insert(tag);
-    const std::string* de_duped_tag = &*(ret.first);
+    const std::string *de_duped_tag = &*(ret.first);
 
     if (type == "alloc") {
       recordMalloc(json_element["address"].get<uint64_t>(),
@@ -66,13 +72,13 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
     } else if (type == "free") {
       recordFree(json_element["address"].get<uint64_t>(), de_duped_tag, 0);
     } else if (type == "event") {
-      recordEvent(tag);
+      recordEvent(tag, color);
     } else if (type == "rangefree") {
       uint64_t low = json_element["low"].get<uint64_t>();
       uint64_t high = json_element["high"].get<uint64_t>();
       recordFreeRange(low, high, de_duped_tag, 0);
     } else if (type == "address") {
-      recordAddress(json_element["address"].get<uint64_t>(), tag);
+      recordAddress(json_element["address"].get<uint64_t>(), tag, color);
     }
     fflush(stdout);
   }
@@ -111,7 +117,8 @@ void HeapHistory::setCurrentWindow(const HeapWindow &new_window) {
   current_window_.reset(new_window);
 }
 
-void HeapHistory::recordMalloc(uint64_t address, size_t size, const std::string* tag, uint8_t heap_id) {
+void HeapHistory::recordMalloc(uint64_t address, size_t size,
+                               const std::string *tag, uint8_t heap_id) {
   ++current_tick_;
   // Check if there is already a live block at this address.
   if (live_blocks_.find(std::make_pair(address, heap_id)) !=
@@ -135,7 +142,8 @@ void HeapHistory::recordMalloc(uint64_t address, size_t size, const std::string*
   global_area_.minimum_tick_ = 0;
 }
 
-void HeapHistory::recordFree(uint64_t address, const std::string* tag, uint8_t heap_id) {
+void HeapHistory::recordFree(uint64_t address, const std::string *tag,
+                             uint8_t heap_id) {
   // Any event has to clear the sorted HeapBlock cache.
   ++current_tick_;
   std::map<std::pair<uint64_t, uint8_t>, size_t>::iterator current_block =
@@ -154,7 +162,8 @@ void HeapHistory::recordFree(uint64_t address, const std::string* tag, uint8_t h
       (static_cast<double>(current_tick_) * 1.05) + 1.0;
 }
 
-void HeapHistory::recordFreeRange(uint64_t low_end, uint64_t high_end, const std::string* tag, uint8_t heap_id) {
+void HeapHistory::recordFreeRange(uint64_t low_end, uint64_t high_end,
+                                  const std::string *tag, uint8_t heap_id) {
   // Find the lower boundary.
   std::map<std::pair<uint64_t, uint8_t>, size_t>::iterator start_block =
       live_blocks_.lower_bound(std::make_pair(low_end, heap_id));
@@ -165,14 +174,16 @@ void HeapHistory::recordFreeRange(uint64_t low_end, uint64_t high_end, const std
   while ((start_block != end_block) && (start_block != live_blocks_.end())) {
     uint64_t block_address = start_block->first.first;
     uint8_t block_heap_id = start_block->first.second;
-    // We cannot call recordFree inside the loop because modifying the live_block_ map would invalidate our
+    // We cannot call recordFree inside the loop because modifying the
+    // live_block_ map would invalidate our
     // iterators.
-    if ((block_heap_id == heap_id) && (block_address >= low_end) && (block_address <= high_end)) {
+    if ((block_heap_id == heap_id) && (block_address >= low_end) &&
+        (block_address <= high_end)) {
       blocks_to_free.push_back(std::make_pair(block_address, heap_id));
     }
     ++start_block;
   }
-  for (const auto& block : blocks_to_free) {
+  for (const auto &block : blocks_to_free) {
     recordFree(block.first, tag, block.second);
   }
 }
@@ -196,42 +207,61 @@ void HeapHistory::recordRealloc(uint64_t old_address, uint64_t new_address,
   recordMalloc(new_address, size, &*(ret.first), heap_id);
 }
 
-void HeapHistory::recordEvent(const std::string &event_label) {
-  tick_to_event_strings_[current_tick_] = event_label;
+void HeapHistory::recordEvent(const std::string &event_label,
+                              const std::string &color) {
+  tick_to_event_strings_[current_tick_] =
+      std::make_pair(ColorStringToUint32(color), event_label);
 }
 
-void HeapHistory::recordAddress(uint64_t address, const std::string &label) {
-  address_to_address_strings_[address] = label;
+uint32_t HeapHistory::ColorStringToUint32(const std::string &color) {
+  const char *str = color.c_str() + 1;
+  return strtol(str, nullptr, 16);
+}
+
+void HeapHistory::recordAddress(uint64_t address, const std::string &label,
+                                const std::string &color) {
+  address_to_address_strings_[address] =
+      std::make_pair(ColorStringToUint32(color), label);
 }
 
 void HeapHistory::eventsToVertices(std::vector<HeapVertex> *vertices) {
   // Add two vertices with 0 or 1 on the y axis, and the proper tick on the
   // x axis.
-  for (const auto& event : tick_to_event_strings_) {
-    vertices->push_back(
-          HeapVertex(event.first, 0, QVector3D(1.0, 0.0, 0.0)));
-    vertices->push_back(
-          HeapVertex(event.first, 1, QVector3D(1.0, 0.0, 0.0)));
-    }
+  for (const auto &event : tick_to_event_strings_) {
+    uint32_t color = event.second.first;
+printf("color is %lx\n", color);
+printf("tag is %s\n", event.second.second.c_str());
+    float red = static_cast<float>((color & 0xFF0000) >> 16) / 255.0;
+    float green = static_cast<float>((color & 0xFF00) >> 8) / 255.0;
+    float blue = static_cast<float>(color & 0xFF) / 255.0;
+
+//    printf("red: %f green: %f blue: %f\n", red, green, blue);
+    vertices->push_back(HeapVertex(event.first, 0, QVector3D(red, green, blue)));
+    vertices->push_back(HeapVertex(event.first, 1, QVector3D(red, green, blue)));
+  }
 }
 
 void HeapHistory::addressesToVertices(std::vector<HeapVertex> *vertices) {
   // Add two vertices with 0 or 1 on the y axis, and the proper tick on the
   // x axis.
-  for (const auto& event : address_to_address_strings_) {
-    vertices->push_back(
-          HeapVertex(0, event.first, QVector3D(1.0, 0.0, 0.0)));
-    vertices->push_back(
-          HeapVertex(1, event.first, QVector3D(1.0, 0.0, 0.0)));
-    }
+  for (const auto &event : address_to_address_strings_) {
+    uint32_t color = event.second.first;
+
+    float red = static_cast<float>(color & 0xFF0000 >> 16) / 255.0;
+    float green = static_cast<float>(color & 0xFF00 >> 8) / 255.0;
+    float blue = static_cast<float>(color & 0xFF) / 255.0;
+
+    vertices->push_back(HeapVertex(0, event.first, QVector3D(red, green, blue)));
+    vertices->push_back(HeapVertex(1, event.first, QVector3D(red, green, blue)));
+  }
 }
 
 bool HeapHistory::getEventAtTick(uint32_t tick, std::string *eventstring) {
-  const auto& iterator = tick_to_event_strings_.find(tick);
+  const auto &iterator = tick_to_event_strings_.find(tick);
   if (iterator == tick_to_event_strings_.end()) {
     return false;
   } else {
-    *eventstring = iterator->second;
+    *eventstring = iterator->second.second;
     return true;
   }
 }
@@ -242,8 +272,8 @@ void HeapHistory::HeapBlockToVertices(const HeapBlock &block,
   block.toVertices(current_tick_, vertices);
 }
 
-size_t
-HeapHistory::heapBlockVerticesForActiveWindow(std::vector<HeapVertex> *vertices) {
+size_t HeapHistory::heapBlockVerticesForActiveWindow(
+    std::vector<HeapVertex> *vertices) {
   size_t active_block_count = 0;
   for (std::vector<HeapBlock>::iterator iter = heap_blocks_.begin();
        iter != heap_blocks_.end(); ++iter) {
