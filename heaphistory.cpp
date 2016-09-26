@@ -257,9 +257,16 @@ bool HeapHistory::getEventAtTick(uint32_t tick, std::string *eventstring) {
   const auto iterator = tick_to_event_strings_.find(tick);
   if (iterator == tick_to_event_strings_.end()) {
     // Try an approximate search.
-    const auto iterator_approx = tick_to_event_strings_.lower_bound(tick-300);
-    if (abs(tick - iterator_approx->first) < 300) {
-      *eventstring = iterator_approx->second.second;
+    auto iterator_approx = tick_to_event_strings_.lower_bound(tick-300);
+    uint32_t minimum = std::numeric_limits<uint32_t>::max();
+    while (abs(iterator_approx->first - tick) < 300) {
+      if (abs(iterator_approx->first - tick) <= minimum) {
+        minimum = abs(iterator_approx->first - tick);
+        *eventstring = iterator_approx->second.second;
+      }
+      ++iterator_approx;
+    }
+    if (minimum != std::numeric_limits<uint32_t>::max()) {
       return true;
     } else {
       return false;
