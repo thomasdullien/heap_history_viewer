@@ -75,6 +75,8 @@ private:
   void recordMallocConflict(uint64_t address, size_t size, uint8_t heap_id);
   void recordFreeConflict(uint64_t address, uint8_t heap_id);
   void recordFreeRange(uint64_t low_end, uint64_t high_end, const std::string *tag, uint8_t heap_id);
+  void recordFilterRange(uint64_t low, uint64_t high);
+  bool isEventFiltered(uint64_t address);
   bool isBlockActive(const HeapBlock &block);
   // Dumps 6 vertices for 2 triangles for a block into the output vector.
   // TODO(thomasdullien): Optimize this to only dump 4 vertices?
@@ -109,6 +111,10 @@ private:
   std::map<uint64_t, std::pair<uint32_t, std::string>> address_to_address_strings_;
 
   std::set<std::string> alloc_or_free_tags_;
+
+  // Ranges of addresses to consider. If empty, consider everything.
+  std::vector<std::pair<uint64_t, uint64_t>> filter_ranges_;
+
   uint32_t ColorStringToUint32(const std::string &color);
 };
 

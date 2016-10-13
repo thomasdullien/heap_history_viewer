@@ -23,6 +23,7 @@ bool HeapHistory::hasMandatoryJSONElementFields(
   static std::map<std::string, std::vector<std::string>> mandatory_fields = {
       {"alloc", {"address", "size"}},
       {"free", {"address"}},
+      {"filterrange", {"low", "high"}},
       {"event", {}},
       {"rangefree", {"low", "high"}},
       {"address", {"address"}}};
@@ -79,7 +80,12 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
       recordFreeRange(low, high, de_duped_tag, 0);
     } else if (type == "address") {
       recordAddress(json_element["address"].get<uint64_t>(), tag, color);
+    } else if (type == "filterrange") {
+      uint64_t low = json_element["low"].get<uint64_t>();
+      uint64_t high = json_element["high"].get<uint64_t>();
+      recordFilterRange(low, high);
     }
+
     fflush(stdout);
   }
   printf("heap_blocks_.size() is %d\n", heap_blocks_.size());
@@ -117,9 +123,25 @@ void HeapHistory::setCurrentWindow(const HeapWindow &new_window) {
   current_window_.reset(new_window);
 }
 
+bool HeapHistory::isEventFiltered(uint64_t address) {
+  if (filter_ranges_.empty()) {
+    return false;
+  }
+  for (const auto& filter : filter_ranges_) {
+    if ((address >= filter.first) && (address <= filter.second)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void HeapHistory::recordMalloc(uint64_t address, size_t size,
                                const std::string *tag, uint8_t heap_id) {
   ++current_tick_;
+  if (isEventFiltered(address)) {
+    return;
+  }
+
   // Check if there is already a live block at this address.
   if (live_blocks_.find(std::make_pair(address, heap_id)) !=
       live_blocks_.end()) {
@@ -146,6 +168,9 @@ void HeapHistory::recordFree(uint64_t address, const std::string *tag,
                              uint8_t heap_id) {
   // Any event has to clear the sorted HeapBlock cache.
   ++current_tick_;
+  if (isEventFiltered(address)) {
+    return;
+  }
   std::map<std::pair<uint64_t, uint8_t>, size_t>::iterator current_block =
       live_blocks_.find(std::make_pair(address, heap_id));
   if (current_block == live_blocks_.end()) {
@@ -186,6 +211,10 @@ void HeapHistory::recordFreeRange(uint64_t low_end, uint64_t high_end,
   for (const auto &block : blocks_to_free) {
     recordFree(block.first, tag, block.second);
   }
+}
+
+void HeapHistory::recordFilterRange(uint64_t low, uint64_t high) {
+  filter_ranges_.push_back(std::make_pair(low, high));
 }
 
 void HeapHistory::recordFreeConflict(uint64_t address, uint8_t heap_id) {

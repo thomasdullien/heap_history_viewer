@@ -2,7 +2,8 @@
 #include "ui_heapvizwindow.h"
 #include <QStatusBar>
 
-HeapVizWindow::HeapVizWindow(const std::string* inputfile, QWidget *parent)
+HeapVizWindow::HeapVizWindow(const std::string* inputfile,
+                             QWidget *parent)
     : QMainWindow(parent), ui(new Ui::HeapVizWindow) {
   ui->setupUi(this);
 

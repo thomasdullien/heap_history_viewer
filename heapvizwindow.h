@@ -15,7 +15,8 @@ class HeapVizWindow : public QMainWindow {
   Q_OBJECT
 
 public:
-  explicit HeapVizWindow(const std::string* inputfile=nullptr, QWidget *parent = 0);
+  explicit HeapVizWindow(const std::string* inputfile=nullptr,
+                         QWidget *parent = 0);
   ~HeapVizWindow();
 
 protected:
