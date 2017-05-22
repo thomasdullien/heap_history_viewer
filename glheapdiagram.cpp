@@ -10,17 +10,17 @@
 #include <QMouseEvent>
 #include <QWindow>
 
+#include "addressdiagramlayer.h"
+#include "eventdiagramlayer.h"
 #include "heapblock.h"
+#include "heapblockdiagramlayer.h"
 #include "vertex.h"
 #include "glheapdiagram.h"
 
 GLHeapDiagram::GLHeapDiagram(QWidget *parent)
-    : QOpenGLWidget(parent), block_layer_(new GLHeapDiagramLayer(
-                                 ":/simple.vert", ":/simple.frag", false)),
-      event_layer_(
-          new GLHeapDiagramLayer(":/event_shader.vert", ":/simple.frag", true)),
-      address_layer_(new GLHeapDiagramLayer(":/address_shader.vert",
-                                            ":/simple.frag", true)),
+    : QOpenGLWidget(parent), block_layer_(new HeapBlockDiagramLayer()),
+      event_layer_(new EventDiagramLayer()),
+      address_layer_(new AddressDiagramLayer()),
       is_GL_initialized_(false), file_to_load_("") {
 
   //  QObject::connect(this, SIGNAL(blockClicked), parent->parent(),
@@ -52,7 +52,7 @@ void GLHeapDiagram::loadFileInternal() {
     heap_history_.addressesToVertices(address_vertices);
     address_layer_->initializeGLStructures(this);
 
-    // Initialize the grid lines drawing layer.
+
   }
 }
 

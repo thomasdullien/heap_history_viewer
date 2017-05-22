@@ -307,6 +307,8 @@ void HeapHistory::HeapBlockToVertices(const HeapBlock &block,
   block.toVertices(current_tick_, vertices);
 }
 
+// Converts the vector of heap blocks in the current heap history to
+// heap vertices.
 size_t HeapHistory::heapBlockVerticesForActiveWindow(
     std::vector<HeapVertex> *vertices) {
   size_t active_block_count = 0;

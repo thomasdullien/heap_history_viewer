@@ -10,7 +10,10 @@
 #include <QOpenGLFunctions>
 #include <QPoint>
 
+#include "addressdiagramlayer.h"
+#include "eventdiagramlayer.h"
 #include "glheapdiagramlayer.h"
+#include "heapblockdiagramlayer.h"
 #include "heaphistory.h"
 #include "transform3d.h"
 
@@ -75,10 +78,10 @@ private:
   // with two matrices that are applied iteratively.
   QMatrix2x2 heap_to_screen_matrix_;
 
-  std::unique_ptr<GLHeapDiagramLayer> block_layer_;
-  std::unique_ptr<GLHeapDiagramLayer> grid_layer_;
-  std::unique_ptr<GLHeapDiagramLayer> event_layer_;
-  std::unique_ptr<GLHeapDiagramLayer> address_layer_;
+  std::unique_ptr<HeapBlockDiagramLayer> block_layer_;
+  //std::unique_ptr<GLHeapDiagramLayer> grid_layer_;
+  std::unique_ptr<EventDiagramLayer> event_layer_;
+  std::unique_ptr<AddressDiagramLayer> address_layer_;
   // The heap history.
   HeapHistory heap_history_;
 

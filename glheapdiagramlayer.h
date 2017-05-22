@@ -23,8 +23,12 @@ public:
                   const QMatrix2x2 &heap_to_screen);
 
   // Get a pointer to the HeapVertex vector so it can be filled.
-  std::vector<HeapVertex> *getVertexVector() { return &layer_vertices_; }
+  std::vector<HeapVertex>* getVertexVector() { return &layer_vertices_; }
 
+  // In order to allow debugging of the individual layers, each derived
+  // class needs to provide a function that dumps the vertices and their
+  // post-transform versions.
+  virtual void debugDumpVertexTransformation() = 0;
 private:
   void setupStandardUniforms();
   // Helper functions to set the uniforms for the shaders.
