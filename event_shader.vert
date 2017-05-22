@@ -192,7 +192,7 @@ void main(void)
   // Read the X (tick) and Y (address) coordinate of the current point.
   ivec2 tick = Load32BitLeftShiftedBy4Into64Bit(position.x);
   // Lowest 4 bit represent fractional component, again.
-  ivec2 minimum_visible_tick= ivec2(visible_tick_base_A, visible_tick_base_B);
+  ivec2 minimum_visible_tick = ivec2(visible_tick_base_A, visible_tick_base_B);
   // Translate the x / tick coordinate to be aligned with 0.
   ivec2 tick_coordinate_translated = Sub64(tick, minimum_visible_tick);
 

@@ -180,7 +180,7 @@ int FloatToInt(float argument) {
    return int(argument);
 }
 
-// This shader draws vertical lines to signify events.
+// This shader draws horizontal lines to signify addresses.
 void main(void)
 {
   // =========================================================================

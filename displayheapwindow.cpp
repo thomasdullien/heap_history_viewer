@@ -365,7 +365,9 @@ bool DisplayHeapWindow::mapDisplayCoordinateToHeap(double dx, double dy,
   }
   // Return the values.
   uint64_t final_address = tentative_address.getLowUint64() >> 4;
-  final_address |= tentative_address.z >> 4;
+  uint64_t tentative_address_z = tentative_address.z;
+  tentative_address_z = tentative_address_z << 60;
+  final_address |= tentative_address_z;
   *address = final_address;
   *tick = tentative_tick >> 4;
   return true;
@@ -443,6 +445,75 @@ DisplayHeapWindow::mapHeapCoordinateToDisplay(uint32_t tick,
       getYScalingHeapToScreen());
 }
 
+void DisplayHeapWindow::debugDumpHeapVertex(const HeapVertex& vertex) const {
+  ivec3 position(vertex.getX(), vertex.getY() & 0xFFFFFFFF, vertex.getY() >> 32);
+
+  internalMapAddressCoordinateToDisplay(
+      position, minimum_address_.x, minimum_address_.y, minimum_address_.z,
+      minimum_tick_.x, minimum_tick_.y, getXScalingHeapToScreen(),
+      getYScalingHeapToScreen());
+}
+
+void DisplayHeapWindow::debugDumpHeapVerticesToAddressMapper(
+  const std::vector<HeapVertex>* vertices) const {
+  printf("(");
+  for (const HeapVertex& vertex : *vertices) {
+    debugDumpHeapVertex(vertex);
+    printf(",");
+  }
+  printf(")\n");
+  fflush(stdout);
+}
+
+// Keep this code as close as possible to actual GSLS v1.3 shader code, so the
+// code can be tested here and then cut/pasted into the shader when it works
+// (since debugging GLSL is so horrible).
+void DisplayHeapWindow::internalMapAddressCoordinateToDisplay(
+  ivec3 position, int visible_heap_base_A, int visible_heap_base_B,
+  int visible_heap_base_C, int visible_tick_base_A, int visible_tick_base_B,
+  float scale_heap_x, float scale_heap_y) const {
+
+  float scale_heap_to_screen[2][2] = {{scale_heap_x, 0.0}, {0.0, scale_heap_y}};
+  // =========================================================================
+  // Everything below should be valid C++ and also valid GLSL! This code is
+  // shared between displayheapwindow.cpp and simple.vert, so make sure it
+  // always stays in synch!!
+  // =========================================================================
+  //
+  // Read the X (tick) and Y (address) coordinate of the current point.
+  ivec3 address = Load64BitLeftShiftedBy4Into96Bit(position.y, position.z);
+
+  // Get the base of the heap in the displayed window. This is a 96-bit number
+  // where the lowest 4 bit represent a fractional component, the rest is a
+  // normal 92-bit integer.
+  ivec3 heap_base =
+    ivec3(visible_heap_base_A, visible_heap_base_B, visible_heap_base_C);
+
+  // Translate the y / address coordinate of the heap so that the left lower
+  // corner of the visible heap window aligns with 0.
+  ivec3 address_coordinate_translated = Sub96(address, heap_base);
+
+  // Multiply the y coordinate with the y entry of the transformation matrix.
+  // To avoid a degenerate matrix, C++ code supplies a matrix containing the
+  // square roots of the actual matrix to the shader code, so apply the float
+  // twice
+  float temp_y = Multiply96BitWithFloat(address_coordinate_translated,
+                                        scale_heap_to_screen[1][1]);
+  float final_y = temp_y * scale_heap_to_screen[1][1];
+
+  final_y = 2 * final_y - 1;
+
+  float final_x = -1.0;
+  if (position.x != 0) {
+    final_x = 1.0;
+  }
+  // ==========================================================================
+  // End of mandatory valid GLSL part.
+  // ==========================================================================
+
+  printf("%f ", final_y);
+}
+
 // Keep this code as close as possible to actual GSLS v1.3 shader code, so the
 // code can be tested here and then cut/pasted into the shader when it works
 // (since debugging GLSL is so horrible).
@@ -498,23 +569,21 @@ std::pair<float, float> DisplayHeapWindow::internalMapHeapCoordinateToDisplay(
   // XXX:DEBUG CODE
 
   if (debug_mode_) {
-    printf("[Debug]   address is %08lx%08lx%08lx\n", address.z, address.y,
-           address.x);
-    printf("[Debug]   tick is %08lx%08lx\n", tick.y, tick.x);
-    printf("[Debug]   minimum_visible_tick is %08lx%08lx\n",
-           minimum_visible_tick.y, minimum_visible_tick.x);
-    printf("[Debug]   heap_base is %08lx%08lx%08lx\n", heap_base.z, heap_base.y,
-           heap_base.x);
-    printf("[Debug]   address_coordinate_translated is %08lx%08lx%08lx\n",
-           address_coordinate_translated.z, address_coordinate_translated.y,
-           address_coordinate_translated.x);
-    printf("[Debug]   tick_coordinate_translated is %08lx%08lx\n",
-           tick_coordinate_translated.y, tick_coordinate_translated.x);
+    printf("[Debug]   (%08lx%08lx%08lx, %08lx%08lx) -> (%f, %f)\n", address.z,
+      address.y, address.x, tick.y, tick.x, final_x, final_y);
+    printf("[Debug]   minimum_visible_tick: %08lx%08lx, heap_base: %08lx%08lx%08lx\n",
+      minimum_visible_tick.y, minimum_visible_tick.x, heap_base.z,
+      heap_base.y);
+    printf("[Debug] address_coordinate_translated is %08lx%08lx%08lx, "
+      "tick_coordinate_translated is %08lx%08lx\n", address_coordinate_translated.z,
+      address_coordinate_translated.y, address_coordinate_translated.x,
+      tick_coordinate_translated.y, tick_coordinate_translated.x);
     printf("[Debug]   temp_x is %f, temp_y is %f\n", temp_x, temp_y);
     printf("[Debug]   scale_heap_to_screen[0][0] is %f, "
-           "scale_heap_to_screen[1][1] is %f\n ",
-           scale_heap_to_screen[0][0], scale_heap_to_screen[1][1]);
-    printf("[Debug]   final_x is %f, final_y is %f\n", final_x, final_y);
+      "scale_heap_to_screen[1][1] is %f\n",
+      scale_heap_to_screen[0][0], scale_heap_to_screen[1][1]);
+    printf("[Debug]-------------------------------\n");
+    fflush(stdout);
   }
 
   return std::make_pair(final_x, final_y);

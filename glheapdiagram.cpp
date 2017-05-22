@@ -132,6 +132,7 @@ void GLHeapDiagram::paintGL() {
   updateHeapToScreenMap();
   debugDumpVerticesAndMappings();
   const DisplayHeapWindow &heap_window = heap_history_.getCurrentWindow();
+  heap_window.setDebug(true);
 
   block_layer_->paintLayer(heap_window.getMinimumTick(),
                            heap_window.getMinimumAddress(),
@@ -141,6 +142,9 @@ void GLHeapDiagram::paintGL() {
   event_layer_->paintLayer(heap_window.getMinimumTick(),
                            heap_window.getMinimumAddress(),
                            heap_to_screen_matrix_);
+
+  heap_window.debugDumpHeapVerticesToAddressMapper(
+    address_layer_->getVertexVector());
 
   address_layer_->paintLayer(heap_window.getMinimumTick(),
                              heap_window.getMinimumAddress(),

@@ -1,8 +1,17 @@
+// A "layer" in the heap diagram - the actual diagram for the user is composed
+// of several such layers (heap blocks, horizontal lines ~ 'addresses', vertical
+// lines ~ 'events). Since each layer has to perform extremely similar actions
+// but call different shaders with different geometry, most of the base case is
+// handled in this class.
+
 #include <QOpenGLShaderProgram>
 #include <QOpenGLFunctions>
 
 #include "glheapdiagramlayer.h"
 
+// Users of this class need to provide a vertex and fragment shader program, and
+// indicate if the layer is a lines-only layer or of actual triangles / rectangles
+// ought to be drawn.
 GLHeapDiagramLayer::GLHeapDiagramLayer(
     const std::string &vertex_shader_name,
     const std::string &fragment_shader_name, bool is_line_layer)
@@ -18,6 +27,8 @@ GLHeapDiagramLayer::~GLHeapDiagramLayer() {
   }
 }
 
+// Mostly boilerplate code for OpenGL -- load the shaders, link and bind them,
+// create a vertex etc.
 void GLHeapDiagramLayer::initializeGLStructures(QOpenGLFunctions *parent) {
   // Load the shaders.
   layer_shader_program_->addShaderFromSourceFile(QOpenGLShader::Vertex,
@@ -66,24 +77,33 @@ void GLHeapDiagramLayer::initializeGLStructures(QOpenGLFunctions *parent) {
 void GLHeapDiagramLayer::setupStandardUniforms() {
   uniform_vertex_to_screen_ =
       layer_shader_program_->uniformLocation("scale_heap_to_screen");
+  // The reason why three numbers are needed for the visible heap base
+  // is that the central heap rectangle can in theory range from
+  // 0 to 2^64-1. This means that the minimum address that can be on
+  // screen can be as low as -2^63 (e.g. half a maximum-sized heap down)
+  // or as high as 2^64+2^63.
   uniform_visible_heap_base_A_ =
       layer_shader_program_->uniformLocation("visible_heap_base_A");
   uniform_visible_heap_base_B_ =
       layer_shader_program_->uniformLocation("visible_heap_base_B");
   uniform_visible_heap_base_C_ =
       layer_shader_program_->uniformLocation("visible_heap_base_C");
+  // The lowest visible tick is passed as 64 bits (e.g. two 32-bit numbers).
   uniform_visible_tick_base_A_ =
       layer_shader_program_->uniformLocation("visible_tick_base_A");
   uniform_visible_tick_base_B_ =
       layer_shader_program_->uniformLocation("visible_tick_base_B");
 }
 
+// Set the heap base.
 void GLHeapDiagramLayer::setHeapBaseUniforms(int32_t x, int32_t y, int32_t z) {
   layer_shader_program_->setUniformValue(uniform_visible_heap_base_A_, x);
   layer_shader_program_->setUniformValue(uniform_visible_heap_base_B_, y);
   layer_shader_program_->setUniformValue(uniform_visible_heap_base_C_, z);
 }
 
+// Sends the value of the matrix that performs heap-space-to-screen-space
+// transformation to the shader.
 void GLHeapDiagramLayer::setHeapToScreenMatrix(
     const QMatrix2x2 &heap_to_screen) {
   layer_shader_program_->setUniformValue(uniform_vertex_to_screen_,

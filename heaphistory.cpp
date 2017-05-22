@@ -110,13 +110,6 @@ size_t HeapHistory::getActiveBlocks(
 
 bool HeapHistory::isBlockActive(const HeapBlock &block) {
   return true;
-  /*if (!(block.end_tick_ < current_window_.minimum_tick_) &&
-    !(block.start_tick_ > current_window_.maximum_tick_) &&
-    !((block.address_ + block.size_) > current_window_.minimum_address_) &&
-    !(block.address_ < current_window_.maximum_address_)) {
-    return true;
-  }
-  return false;*/
 }
 
 void HeapHistory::setCurrentWindow(const HeapWindow &new_window) {
@@ -288,7 +281,9 @@ bool HeapHistory::getEventAtTick(uint32_t tick, std::string *eventstring) {
     // Try an approximate search.
     auto iterator_approx = tick_to_event_strings_.lower_bound(tick-300);
     uint32_t minimum = std::numeric_limits<uint32_t>::max();
-    while (abs(iterator_approx->first - tick) < 300) {
+
+    while ((iterator_approx != tick_to_event_strings_.end() &&
+           (abs(iterator_approx->first - tick) < 300))) {
       if (abs(iterator_approx->first - tick) <= minimum) {
         minimum = abs(iterator_approx->first - tick);
         *eventstring = iterator_approx->second.second;

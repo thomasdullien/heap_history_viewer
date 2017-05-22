@@ -2,6 +2,7 @@
 #define DISPLAYHEAPWINDOW_H
 
 #include "heapwindow.h"
+#include "vertex.h"
 
 // A simple implementation of an ivec2 and ivec 3 to allow the C++ code
 // to resemble GLSL code more.
@@ -185,6 +186,16 @@ public:
   long double getWidthAsLongDouble() const;
 
   void setDebug(bool mode) const { debug_mode_ = mode; }
+
+  // Debugging functions to help debug the GLSL shader code in C++.
+  void internalMapAddressCoordinateToDisplay(ivec3 position,
+    int visible_heap_base_A, int visible_heap_base_B,
+    int visible_heap_base_C, int visible_tick_base_A, int visible_tick_base_B,
+    float scale_heap_x, float scale_heap_y) const;
+  void debugDumpHeapVertex(const HeapVertex& vertex) const;
+  void debugDumpHeapVerticesToAddressMapper(
+    const std::vector<HeapVertex>* vertices) const;
+
 private:
   // The internal version of the above mapping function. The code should be
   // kept in a state so that it can be cut & pasted into the GLSL files with-

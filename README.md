@@ -22,7 +22,9 @@ The codebase in this repository has the following goals:
  - Useable. This will take some time.
 
 Instructions for the moment:
- - Build using stock QtCreator
+ - Build using stock QtCreator.
+ - You will need:
+    libgflags-dev mesa-common-dev libqt4-opengl-dev
  - The current trunk will simply try to load /tmp/heap.json - use the enclosed
    json file as an example.
 
