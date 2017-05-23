@@ -97,6 +97,9 @@ void GLHeapDiagramLayer::setupStandardUniforms() {
 
 // Set the heap base.
 void GLHeapDiagramLayer::setHeapBaseUniforms(int32_t x, int32_t y, int32_t z) {
+  visible_heap_base_A_ = x;
+  visible_heap_base_B_ = y;
+  visible_heap_base_C_ = z;
   layer_shader_program_->setUniformValue(uniform_visible_heap_base_A_, x);
   layer_shader_program_->setUniformValue(uniform_visible_heap_base_B_, y);
   layer_shader_program_->setUniformValue(uniform_visible_heap_base_C_, z);
@@ -106,6 +109,7 @@ void GLHeapDiagramLayer::setHeapBaseUniforms(int32_t x, int32_t y, int32_t z) {
 // transformation to the shader.
 void GLHeapDiagramLayer::setHeapToScreenMatrix(
     const QMatrix2x2 &heap_to_screen) {
+  vertex_to_screen_ = heap_to_screen;
   layer_shader_program_->setUniformValue(uniform_vertex_to_screen_,
                                          heap_to_screen);
 }
@@ -127,6 +131,34 @@ void GLHeapDiagramLayer::paintLayer(ivec2 tick, ivec3 address,
 }
 
 void GLHeapDiagramLayer::setTickBaseUniforms(int32_t x, int32_t y) {
+  visible_tick_base_A_ = x;
+  visible_tick_base_B_ = y;
   layer_shader_program_->setUniformValue(uniform_visible_tick_base_A_, x);
   layer_shader_program_->setUniformValue(uniform_visible_tick_base_B_, y);
+}
+
+void GLHeapDiagramLayer::debugDumpVertexTransformation() {
+  printf("[Debug] Start of layer dump.\n");
+  uint32_t index = 0;
+
+  for (uint32_t index = 0; index < layer_vertices_.size(); ++index) {
+    const HeapVertex& vertex = layer_vertices_[index];
+    std::pair<vec4, vec4> result = vertexShaderSimulator(vertex);
+
+    printf("(%d, %lx, Color %lx) -->", vertex.getX(), vertex.getY(),
+      vertex.getColor());
+    printf("(%f, %f, %f, %f), (%f, %f, %f, %f)\n", result.first.w_, result.first.x_,
+      result.first.y_, result.first.z_, result.second.w_, result.second.x_,
+      result.second.y_, result.second.z_);
+    if (is_line_layer_) {
+      if ((index % 2) == 1) {
+        printf("\n");
+        fflush(stdout);
+      }
+    } else if ((index % 3) == 2) {
+      printf("\n");
+      fflush(stdout);
+    }
+  }
+  printf("[Debug] End of layer dump.\n");
 }

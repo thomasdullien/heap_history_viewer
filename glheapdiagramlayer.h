@@ -26,10 +26,13 @@ public:
   std::vector<HeapVertex>* getVertexVector() { return &layer_vertices_; }
 
   // In order to allow debugging of the individual layers, each derived
-  // class needs to provide a function that dumps the vertices and their
-  // post-transform versions.
-  virtual void debugDumpVertexTransformation() = 0;
-private:
+  // class needs to provide a function that simulates the GLSL vertex
+  // shader in C++. Returns a vec4 with the (x, y, 0, 1) for the mapped
+  // vertex and a vec4 for the color.
+  virtual std::pair<vec4, vec4> vertexShaderSimulator(const HeapVertex&
+    vertex) = 0;
+  void debugDumpVertexTransformation();
+protected:
   void setupStandardUniforms();
   // Helper functions to set the uniforms for the shaders.
   void setTickBaseUniforms(int32_t x, int32_t y);
@@ -50,12 +53,25 @@ private:
   int uniform_visible_heap_base_B_;
   int uniform_visible_heap_base_C_;
 
+  // The actual values that were set. Used for the internal C++ debug
+  // simulation of the GLSL code.
+  int32_t visible_heap_base_A_;
+  int32_t visible_heap_base_B_;
+  int32_t visible_heap_base_C_;
+
   // The minimum tick is provided as ivec2.
   int uniform_visible_tick_base_A_;
   int uniform_visible_tick_base_B_;
 
+  // The actual values that were last set.
+  int32_t visible_tick_base_A_;
+  int32_t visible_tick_base_B_;
+
   // The matrix to project heap vertices to the screen.
   int uniform_vertex_to_screen_;
+
+  // Actual values for the matrix.
+  QMatrix2x2 vertex_to_screen_;
 
   // VAO, VBO and shader for this layer.
   QOpenGLBuffer layer_vertex_buffer_;

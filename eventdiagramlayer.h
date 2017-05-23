@@ -6,7 +6,7 @@ class EventDiagramLayer : public GLHeapDiagramLayer
 {
 public:
   EventDiagramLayer();
-  void debugDumpVertexTransformation();
+  std::pair<vec4, vec4> vertexShaderSimulator(const HeapVertex& vertex);
 };
 
 #endif // EVENTDIAGRAMLAYER_H

@@ -122,6 +122,22 @@ public:
   };
 };
 
+class vec3 {
+public:
+  vec3() : x_(0.0), y_(0.0), z_(0.0) {};
+  vec3(float x, float y, float z) : x_(x), y_(y), z_(z) {};
+  float x_, y_, z_;
+};
+
+class vec4 {
+public:
+  vec4() : w_(0.0), x_(0.0), y_(0.0), z_(0.0) {};
+  vec4(float w, float x, float y, float z) : w_(w), x_(x), y_(y), z_(z) {};
+  vec4(vec3 v3, float z) : w_(v3.x_), x_(v3.y_), y_(v3.z_), z_(z) {};
+  float w_, x_, y_, z_;
+};
+
+
 // Utility functions to emulate 64-bit and 96-bit arithmetic in GLSL. Since
 // GLSL is so horrible to debug, make sure the code for these functions stays
 // both valid C++ and valid GLSL, so the unit tests for this class can help

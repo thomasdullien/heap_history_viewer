@@ -5,7 +5,7 @@
 class AddressDiagramLayer : public GLHeapDiagramLayer {
 public:
   AddressDiagramLayer();
-  void debugDumpVertexTransformation();
+  std::pair<vec4, vec4> vertexShaderSimulator(const HeapVertex& vertex);
 };
 
 #endif // ADDRESSDIAGRAMLAYER_H

@@ -5,7 +5,7 @@
 class HeapBlockDiagramLayer : public GLHeapDiagramLayer {
 public:
   HeapBlockDiagramLayer();
-  void debugDumpVertexTransformation();
+  std::pair<vec4, vec4> vertexShaderSimulator(const HeapVertex& vertex);
 };
 
 #endif // HEAPBLOCKDIAGRAMLAYER_H

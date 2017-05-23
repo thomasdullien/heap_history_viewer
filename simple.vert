@@ -184,7 +184,7 @@ void main(void)
 {
   // =========================================================================
   // Everything below should be valid C++ and also valid GLSL! This code is
-  // shared between displayheapwindow.cpp and simple.vert, so make sure it
+  // shared between heapblockdiagramlayer.cpp and simple.vert, so make sure it
   // always stays in synch!!
   // =========================================================================
   //
