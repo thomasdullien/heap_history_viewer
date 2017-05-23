@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <cmath>
+#include <string>
 
 // A simple implementation of an ivec2 and ivec 3 to allow the C++ code
 // to resemble GLSL code more.
@@ -157,5 +158,6 @@ ivec2 Load32BitLeftShiftedBy4Into64Bit(int low);
 // Functions that are not necessarily needed in GLSL.
 ivec2 LongDoubleTo64Bits(long double value);
 ivec3 LongDoubleTo96Bits(long double value);
-
+const std::string ivec3ToHex(const ivec3& iv3);
+const std::string ivec2ToHex(const ivec2& iv2);
 #endif // GLSL_SIMULATION_FUNCTIONS_H

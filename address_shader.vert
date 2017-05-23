@@ -60,9 +60,9 @@ float Multiply64BitWithFloat(ivec2 a, float b) {
     a = Sub64(zero, a);
   }
   float a0 = float(a.x & 0xFFFF);
-  float a1 = float((a.x & 0xFFFF0000) >> 16);
+  float a1 = float(((a.x & 0xFFFF0000) >> 16) & 0xFFFF);
   float a2 = float(a.y & 0xFFFF);
-  float a3 = float((a.y & 0xFFFF0000) >> 16);
+  float a3 = float(((a.y & 0xFFFF0000) >> 16) & 0xFFFF);
   float left_shift_16f = float(0x10000);
   float left_shift_32f = left_shift_16f * left_shift_16f;
   float left_shift_48f = left_shift_32f * left_shift_16f;
@@ -125,9 +125,9 @@ float Multiply96BitWithFloat(ivec3 a, float b) {
     a = Sub96(zero, a);
   }
   float a0 = float(a.x & 0xFFFF);
-  float a1 = float((a.x & 0xFFFF0000) >> 16);
+  float a1 = float(((a.x & 0xFFFF0000) >> 16) & 0xFFFF);
   float a2 = float(a.y & 0xFFFF);
-  float a3 = float((a.y & 0xFFFF0000) >> 16);
+  float a3 = float(((a.y & 0xFFFF0000) >> 16) & 0xFFFF);
   float a4 = float(a.z & 0xFFFF);
   float a5 = float((a.z & 0xFFFF0000) >> 16);
   float left_shift_16f = float(0x10000);
@@ -221,5 +221,12 @@ void main(void)
   // ==========================================================================
 
   gl_Position = vec4(final_x, final_y, 0.0, 1.0);
+  // Debugging output stuff.
+  /*
+  int ivalue = address_coordinate_translated.x;
+  ivec4 value = ivec4((ivalue & 0xFF0000) >> 16,
+    (ivalue & 0xFF00) >> 8,
+    ivalue & 0xFF, 0xFF);
+  vColor = value / 255.0;*/
   vColor = vec4(color, 0.5);
 }

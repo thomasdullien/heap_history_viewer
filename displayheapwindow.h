@@ -38,10 +38,8 @@ public:
   // does not fall into the heap.
   bool mapDisplayCoordinateToHeap(double dx, double dy, uint32_t *tick,
                                   uint64_t *address) const;
-  void setMinimumTick(ivec2 minimum_tick);
-  void setMaximumTick(ivec2 maximum_tick);
-  void setMinimumAddress(ivec3 address);
-  void setMaximumAddress(ivec3 address);
+  bool setMinAndMaxTick(ivec2 min_tick, ivec2 max_tick);
+  bool setMinAndMaxAddress(ivec3 min_address, ivec3 max_address);
 
   ivec2 getMinimumTick() const { return minimum_tick_; }
   ivec3 getMinimumAddress() const { return minimum_address_; }
@@ -52,8 +50,8 @@ public:
   long double getHeightAsLongDouble() const;
   long double getWidthAsLongDouble() const;
 
+  void checkInternalValuesForSanity() const;
   void setDebug(bool mode) const { debug_mode_ = mode; }
-
   // Debugging functions to help debug the GLSL shader code in C++.
   void internalMapAddressCoordinateToDisplay(ivec3 position,
     int visible_heap_base_A, int visible_heap_base_B,

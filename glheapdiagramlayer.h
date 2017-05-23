@@ -32,6 +32,7 @@ public:
   virtual std::pair<vec4, vec4> vertexShaderSimulator(const HeapVertex&
     vertex) = 0;
   void debugDumpVertexTransformation();
+  void setDebug(bool value) { dump_debug_ = value; };
 protected:
   void setupStandardUniforms();
   // Helper functions to set the uniforms for the shaders.
@@ -43,6 +44,7 @@ protected:
   std::string fragment_shader_name_;
   bool is_initialized_ = false;
   bool is_line_layer_ = false;
+  bool dump_debug_ = false;
 
   // The vertices for this layer.
   std::vector<HeapVertex> layer_vertices_;

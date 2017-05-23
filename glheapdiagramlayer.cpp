@@ -121,6 +121,10 @@ void GLHeapDiagramLayer::paintLayer(ivec2 tick, ivec3 address,
   setHeapBaseUniforms(address.x, address.y, address.z);
   setTickBaseUniforms(tick.x, tick.y);
 
+  //if (dump_debug_) {
+  //  debugDumpVertexTransformation();
+  //}
+
   {
     layer_vao_.bind();
     glDrawArrays(is_line_layer_ ? GL_LINES : GL_TRIANGLES, 0,
@@ -138,14 +142,12 @@ void GLHeapDiagramLayer::setTickBaseUniforms(int32_t x, int32_t y) {
 }
 
 void GLHeapDiagramLayer::debugDumpVertexTransformation() {
-  printf("[Debug] Start of layer dump.\n");
-  uint32_t index = 0;
-
+  printf("[Debug] Start of layer dump (vertex shader '%s').\n",
+    vertex_shader_name_.c_str());
   for (uint32_t index = 0; index < layer_vertices_.size(); ++index) {
     const HeapVertex& vertex = layer_vertices_[index];
     std::pair<vec4, vec4> result = vertexShaderSimulator(vertex);
-
-    printf("(%d, %lx, Color %lx) -->", vertex.getX(), vertex.getY(),
+    printf("%08x.%08x.%08x (%d, %lx, Color %lx) --> ", visible_heap_base_C_, visible_heap_base_B_, visible_heap_base_A_, vertex.getX(), vertex.getY(),
       vertex.getColor());
     printf("(%f, %f, %f, %f), (%f, %f, %f, %f)\n", result.first.w_, result.first.x_,
       result.first.y_, result.first.z_, result.second.w_, result.second.x_,

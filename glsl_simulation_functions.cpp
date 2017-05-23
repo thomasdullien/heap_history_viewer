@@ -51,9 +51,9 @@ float Multiply64BitWithFloat(ivec2 a, float b) {
     a = Sub64(zero, a);
   }
   float a0 = float(a.x & 0xFFFF);
-  float a1 = float((a.x & 0xFFFF0000) >> 16);
+  float a1 = float(((a.x & 0xFFFF0000) >> 16) & 0xFFFF);
   float a2 = float(a.y & 0xFFFF);
-  float a3 = float((a.y & 0xFFFF0000) >> 16);
+  float a3 = float(((a.y & 0xFFFF0000) >> 16) & 0xFFFF);
   float left_shift_16f = float(0x10000);
   float left_shift_32f = left_shift_16f * left_shift_16f;
   float left_shift_48f = left_shift_32f * left_shift_16f;
@@ -116,9 +116,9 @@ float Multiply96BitWithFloat(ivec3 a, float b) {
     a = Sub96(zero, a);
   }
   float a0 = float(a.x & 0xFFFF);
-  float a1 = float((a.x & 0xFFFF0000) >> 16);
+  float a1 = float(((a.x & 0xFFFF0000) >> 16) & 0xFFFF);
   float a2 = float(a.y & 0xFFFF);
-  float a3 = float((a.y & 0xFFFF0000) >> 16);
+  float a3 = float(((a.y & 0xFFFF0000) >> 16) & 0xFFFF);
   float a4 = float(a.z & 0xFFFF);
   float a5 = float((a.z & 0xFFFF0000) >> 16);
   float left_shift_16f = float(0x10000);
@@ -155,7 +155,8 @@ ivec2 Load32BitLeftShiftedBy4Into64Bit(int low) {
   return ivec2(c1, c2);
 }
 // =========================================================================
-// End of valid C++ and valid GLSL part.
+// End of valid C++ and valid GLSL part. The following are convenience
+// functions for C++.
 // =========================================================================
 
 ivec2 LongDoubleTo64Bits(long double value) {
@@ -198,4 +199,18 @@ ivec3 LongDoubleTo96Bits(long double value) {
     return Sub96(zero, result);
   }
   return result;
+}
+
+const std::string ivec3ToHex(const ivec3& iv3) {
+  char buf[200];
+  sprintf(buf, "%08.08x%08.08x%08.08x", static_cast<uint32_t>(iv3.z),
+    static_cast<uint32_t>(iv3.y), static_cast<uint32_t>(iv3.x));
+  return std::string(buf);
+}
+
+const std::string ivec2ToHex(const ivec2& iv2) {
+  char buf[200];
+  sprintf(buf, "%08.08x%08.08x", static_cast<uint32_t>(iv2.y),
+    static_cast<uint32_t>(iv2.x));
+  return std::string(buf);
 }

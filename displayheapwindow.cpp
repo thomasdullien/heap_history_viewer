@@ -9,21 +9,21 @@ DisplayHeapWindow::DisplayHeapWindow(const ivec2 &minimum_tick,
                                      const ivec2 &maximum_tick,
                                      const ivec3 &minimum_address,
                                      const ivec3 &maximum_address) {
-  minimum_tick_ = minimum_tick;
-  maximum_tick_ = maximum_tick;
-  minimum_address_ = minimum_address;
-  maximum_address_ = maximum_address;
+  setMinAndMaxTick(minimum_tick, maximum_tick);
+  setMinAndMaxAddress(minimum_address, maximum_address);
 }
 
 void DisplayHeapWindow::reset(const HeapWindow &global_window) {
-  minimum_tick_ = Load32BitLeftShiftedBy4Into64Bit(global_window.minimum_tick_);
-  maximum_tick_ = Load32BitLeftShiftedBy4Into64Bit(global_window.maximum_tick_);
-  minimum_address_ = Load64BitLeftShiftedBy4Into96Bit(
+  setMinAndMaxTick(
+    Load32BitLeftShiftedBy4Into64Bit(global_window.minimum_tick_),
+    Load32BitLeftShiftedBy4Into64Bit(global_window.maximum_tick_));
+  setMinAndMaxAddress(
+    Load64BitLeftShiftedBy4Into96Bit(
       global_window.minimum_address_ & 0xFFFFFFFF,
-      global_window.minimum_address_ >> 32);
-  maximum_address_ = Load64BitLeftShiftedBy4Into96Bit(
+      global_window.minimum_address_ >> 32),
+    Load64BitLeftShiftedBy4Into96Bit(
       global_window.maximum_address_ & 0xFFFFFFFF,
-      global_window.minimum_address_ >> 32);
+      global_window.maximum_address_ >> 32));
 
   maximum_width_ = Sub64(maximum_tick_, minimum_tick_);
   maximum_height_ = Sub96(maximum_address_, minimum_address_);
@@ -75,6 +75,11 @@ void DisplayHeapWindow::pan(double dx, double dy) {
   long double pan_y = dy * height;
   ivec2 pan_x_64 = LongDoubleTo64Bits(pan_x);
   ivec2 new_minimum_tick = Add64(minimum_tick_, pan_x_64);
+  // TODO(thomasdullien): Re-visit this logic - is the minimum tick
+  // allowed to go negative or is this a no-no?
+  if (new_minimum_tick.getUint64() & 0x8000000000000000) {
+    new_minimum_tick.setUint64(0);
+  }
   ivec2 new_maximum_tick = Add64(maximum_tick_, pan_x_64);
   ivec3 pan_y_96 = LongDoubleTo96Bits(pan_y);
   ivec3 new_maximum_address = Add96(maximum_address_, pan_y_96);
@@ -85,10 +90,8 @@ void DisplayHeapWindow::pan(double dx, double dy) {
   // Vertical dimension.
   checkVerticalCenter(&new_minimum_address, &new_maximum_address);
 
-  maximum_tick_ = new_maximum_tick;
-  minimum_tick_ = new_minimum_tick;
-  maximum_address_ = new_maximum_address;
-  minimum_address_ = new_minimum_address;
+  setMinAndMaxTick(new_minimum_tick, new_maximum_tick);
+  setMinAndMaxAddress(new_minimum_address, new_maximum_address);
 }
 
 void DisplayHeapWindow::zoomToPoint(double dx, double dy, double how_much_x,
@@ -141,10 +144,8 @@ void DisplayHeapWindow::zoomToPoint(double dx, double dy, double how_much_x,
   checkHorizontalCenter(&new_minimum_tick, &new_maximum_tick);
   checkVerticalCenter(&new_minimum_address, &new_maximum_address);
 
-  maximum_tick_ = new_maximum_tick;
-  minimum_tick_ = new_minimum_tick;
-  maximum_address_ = new_maximum_address;
-  minimum_address_ = new_minimum_address;
+  setMinAndMaxTick(new_minimum_tick, new_maximum_tick);
+  setMinAndMaxAddress(new_minimum_address, new_maximum_address);
 }
 
 // Map screen coordinates back to the heap, returns false if the coordinate
@@ -176,23 +177,61 @@ bool DisplayHeapWindow::mapDisplayCoordinateToHeap(double dx, double dy,
   return true;
 }
 
-void DisplayHeapWindow::setMinimumTick(ivec2 minimum_tick) {
-  minimum_tick_ = minimum_tick;
+bool DisplayHeapWindow::setMinAndMaxTick(ivec2 min_tick, ivec2 max_tick) {
+  maximum_tick_ = max_tick;
+  minimum_tick_ = min_tick;
+  if (min_tick.getUint64() & 0x8000000000000000L) {
+    printf("[Alert!] Setting min tock negative??\n");
+    return false;
+  }
+  uint64_t width = maximum_tick_.getUint64() - minimum_tick_.getUint64();
+  if (width & 0x8000000000000000L) {
+    printf("[Alert!] Invalid max/min tick combination!\n");
+    return false;
+  }
+  return true;
 }
 
-void DisplayHeapWindow::setMaximumTick(ivec2 maximum_tick) {
-  maximum_tick_ = maximum_tick;
+bool DisplayHeapWindow::setMinAndMaxAddress(ivec3 min_address, ivec3 max_address) {
+  maximum_address_ = max_address;
+  minimum_address_ = min_address;
+  ivec3 height = Sub96(maximum_address_, minimum_address_);
+  if (height.z & 0x8000000000000000L) {
+    printf("[Alert!] Invalid max/min address combination!\n");
+    return false;
+  }
+  return true;
 }
 
-void DisplayHeapWindow::setMinimumAddress(ivec3 address) {
-  minimum_address_ = address;
-}
-
-void DisplayHeapWindow::setMaximumAddress(ivec3 address) {
-  maximum_address_ = address;
+void DisplayHeapWindow::checkInternalValuesForSanity() const {
+  // Is maximum_tick_ and minimum_tick_ positive?
+  if ((maximum_tick_.y < 0) || (minimum_tick_.y < 0)) {
+    printf("[Alert!] Something is wrong with maximum_tick_ or minimum_tick_:\n"
+      "%s and %s!\n",
+      ivec2ToHex(maximum_tick_).c_str(), ivec2ToHex(minimum_tick_).c_str());
+  }
+  // Is maximum_address_ and minimum_address_ positive?
+  if ((maximum_address_.z < 0) || (minimum_address_.z < 0)) {
+    printf("[Alert!] Something is wrong with maximum_address_ or minimum_address_:\n"
+      "%s and %s!\n",
+      ivec3ToHex(maximum_address_).c_str(), ivec3ToHex(maximum_address_).c_str());
+  }
+  // Is maximum_tick_ - minimum_tick_ positive?
+  ivec3 height = Sub96(maximum_address_, minimum_address_);
+  if (height.z < 0) {
+    printf("[Alert!] Something is wrong with height:\n"
+      "%s!\n", ivec3ToHex(height).c_str());
+  }
+  // Is maximum_address_ - minimum_address_ positive?
+  uint64_t width = maximum_tick_.getUint64() - minimum_tick_.getUint64();
+  if (width & 0x8000000000000000L) {
+    printf("[Alert!] Something is wrong with width:\n"
+      "%llx!\n", width);
+  }
 }
 
 long double DisplayHeapWindow::getXScalingHeapToScreen() const {
+  checkInternalValuesForSanity();
   ivec2 width = Sub64(maximum_tick_, minimum_tick_);
   uint64_t shrinkage = width.getUint64();
   long double factor =
@@ -203,6 +242,7 @@ long double DisplayHeapWindow::getXScalingHeapToScreen() const {
 
 // Scaling to map the heap Y to the interval [0, 1].
 long double DisplayHeapWindow::getYScalingHeapToScreen() const {
+  checkInternalValuesForSanity();
   ivec3 height = Sub96(maximum_address_, minimum_address_);
   // If we are only dealing with a 64-bit height now, everything is easy.
   if (height.z == 0) {

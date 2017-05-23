@@ -11,8 +11,9 @@ std::pair<vec4, vec4> AddressDiagramLayer::vertexShaderSimulator(const HeapVerte
   int visible_heap_base_C = visible_heap_base_C_;
   int visible_tick_base_A = visible_tick_base_A_;
   int visible_tick_base_B = visible_tick_base_B_;
-  float scale_heap_x = vertex_to_screen_.data()[0];
-  float scale_heap_y = vertex_to_screen_.data()[2];
+  float *matrix_data = vertex_to_screen_.data();
+  float scale_heap_x = matrix_data[0];
+  float scale_heap_y = matrix_data[3];
   float scale_heap_to_screen[2][2] = {{scale_heap_x, 0.0}, {0.0, scale_heap_y}};
   vec3 color(vertex.getColor().x(), vertex.getColor().y(), vertex.getColor().z());
 
@@ -34,7 +35,7 @@ std::pair<vec4, vec4> AddressDiagramLayer::vertexShaderSimulator(const HeapVerte
   // Translate the y / address coordinate of the heap so that the left lower
   // corner of the visible heap window aligns with 0.
   ivec3 address_coordinate_translated = Sub96(address, heap_base);
-
+printf(" (address_coordinate_translated %s) ", ivec3ToHex(address_coordinate_translated).c_str());
   // Multiply the y coordinate with the y entry of the transformation matrix.
   // To avoid a degenerate matrix, C++ code supplies a matrix containing the
   // square roots of the actual matrix to the shader code, so apply the float

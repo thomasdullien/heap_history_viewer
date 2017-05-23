@@ -130,9 +130,10 @@ void GLHeapDiagram::paintGL() {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   updateHeapToScreenMap();
-  debugDumpVerticesAndMappings();
+
   const DisplayHeapWindow &heap_window = heap_history_.getCurrentWindow();
-  heap_window.setDebug(true);
+  // Enable for verbose output of the simulated shaders.
+  heap_window.setDebug(false);
 
   block_layer_->paintLayer(heap_window.getMinimumTick(),
                            heap_window.getMinimumAddress(),
@@ -143,9 +144,7 @@ void GLHeapDiagram::paintGL() {
                            heap_window.getMinimumAddress(),
                            heap_to_screen_matrix_);
 
-  heap_window.debugDumpHeapVerticesToAddressMapper(
-    address_layer_->getVertexVector());
-
+  address_layer_->setDebug(true);
   address_layer_->paintLayer(heap_window.getMinimumTick(),
                              heap_window.getMinimumAddress(),
                              heap_to_screen_matrix_);
