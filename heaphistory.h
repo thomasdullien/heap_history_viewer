@@ -16,6 +16,10 @@
 #include "heapwindow.h"
 #include "vertex.h"
 
+// 128-bit signed and unsigned integer types.
+typedef __int128 int128_t;
+typedef unsigned __int128 uint128_t;
+
 class HeapConflict {
 public:
   HeapConflict(uint32_t tick, uint64_t address, bool alloc);

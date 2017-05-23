@@ -35,6 +35,11 @@ void GLHeapDiagramLayer::refreshGLBuffer() {
     layer_vertices_.size() * sizeof(HeapVertex));
 }
 
+void GLHeapDiagramLayer::refreshVertices(const HeapHistory& heap_history) {
+  loadVerticesFromHeapHistory(heap_history);
+  refreshGLBuffer();
+}
+
 // Mostly boilerplate code for OpenGL -- load the shaders, link and bind them,
 // create a vertex etc.
 void GLHeapDiagramLayer::initializeGLStructures(
@@ -52,8 +57,7 @@ void GLHeapDiagramLayer::initializeGLStructures(
   layer_vertex_buffer_.bind();
   layer_vertex_buffer_.setUsagePattern(QOpenGLBuffer::StaticDraw);
 
-  loadVerticesFromHeapHistory(heap_history);
-  refreshGLBuffer();
+  refreshVertices(heap_history);
 
   setupStandardUniforms();
 

@@ -17,6 +17,9 @@ public:
     x = a;
     y = b;
   }
+  bool isNegative() {
+    return (y & 0x80000000) != 0;
+  }
   void setUint64(uint64_t a) {
     x = a & 0xFFFFFFFF;
     y = a >> 32;

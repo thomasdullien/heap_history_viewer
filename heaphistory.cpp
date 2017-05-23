@@ -93,14 +93,21 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
 }
 
 bool HeapHistory::isBlockActive(const HeapBlock &block) const {
-  uint64_t min_tick = current_window_.getMinimumTick().getUint64();
-  uint64_t max_tick = current_window_.getMaximumTick().getUint64();
+  /* TODO(thomasdullien): Implement culling of currently-unused blocks and
+   * blocks that would render too small.
 
-  if ((block.start_tick_ < min_tick) && (block.end_tick_ < min_tick)) {
-    return false;
-  } else if ((block.start_tick_ > max_tick) && (block.end_tick_ > max_tick)) {
+  ivec2 min_tick = current_window_.getMinimumTick();
+  ivec2 max_tick = current_window_.getMaximumTick();
+
+  // If min_tick is positive, remove all blocks that fall to the left of it.
+  if (!min_tick.isNegative() &&
+    (block.end_tick_ < min_tick.getUint64())) {
     return false;
   }
+  */
+  /*else if ((block.start_tick_ > max_tick) && (block.end_tick_ > max_tick)) {
+    return false;
+  }*/
 
   return true;
 }

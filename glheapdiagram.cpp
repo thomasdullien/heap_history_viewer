@@ -109,6 +109,9 @@ void GLHeapDiagram::paintGL() {
                            heap_window.getMinimumAddress(),
                            heap_to_screen_matrix_);
 
+  block_layer_->refreshVertices(heap_history_);
+  printf("painting %d blocks\n", block_layer_->getVertexVector()->size());
+  fflush(stdout);
   // Draw the contents of the blocks.
   block_layer_->paintLayer(heap_window.getMinimumTick(),
                            heap_window.getMinimumAddress(),
