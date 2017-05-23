@@ -80,7 +80,6 @@ private:
   QMatrix2x2 heap_to_screen_matrix_;
 
   std::unique_ptr<HeapBlockDiagramLayer> block_layer_;
-  //std::unique_ptr<GLHeapDiagramLayer> grid_layer_;
   std::unique_ptr<EventDiagramLayer> event_layer_;
   std::unique_ptr<AddressDiagramLayer> address_layer_;
   std::unique_ptr<ActivePagesDiagramLayer> pages_layer_;

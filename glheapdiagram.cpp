@@ -37,27 +37,17 @@ void GLHeapDiagram::loadFileInternal() {
     }
     heap_history_.setCurrentWindowToGlobal();
 
-    // Initialize the heap block drawing layer.
-    std::vector<HeapVertex> *block_vertices = block_layer_->getVertexVector();
-    heap_history_.heapBlockVerticesForActiveWindow(block_vertices);
-    block_layer_->initializeGLStructures(this);
+    // Initialize the heap block layer.
+    block_layer_->initializeGLStructures(heap_history_, this);
 
-    // Initialize the event lines drawing layer.
-    std::vector<HeapVertex> *event_vertices = event_layer_->getVertexVector();
-    heap_history_.eventsToVertices(event_vertices);
-    event_layer_->initializeGLStructures(this);
+    // Initialize the event lines layer.
+    event_layer_->initializeGLStructures(heap_history_, this);
 
-    // Initialize the address lines drawing layer.
-    std::vector<HeapVertex> *address_vertices =
-        address_layer_->getVertexVector();
-    heap_history_.addressesToVertices(address_vertices);
-    address_layer_->initializeGLStructures(this);
+    // Initialize the address lines layer.
+    address_layer_->initializeGLStructures(heap_history_, this);
 
-    // Initialize the address lines drawing layer.
-    std::vector<HeapVertex> *page_vertices =
-        pages_layer_->getVertexVector();
-    heap_history_.activePagesToVertices(page_vertices);
-    pages_layer_->initializeGLStructures(this);
+    // Initialize the active pages layer.
+    pages_layer_->initializeGLStructures(heap_history_, this);
   }
 }
 
@@ -119,7 +109,7 @@ void GLHeapDiagram::paintGL() {
                            heap_window.getMinimumAddress(),
                            heap_to_screen_matrix_);
 
-
+  // Draw the contents of the blocks.
   block_layer_->paintLayer(heap_window.getMinimumTick(),
                            heap_window.getMinimumAddress(),
                            heap_to_screen_matrix_);

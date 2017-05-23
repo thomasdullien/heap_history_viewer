@@ -8,6 +8,7 @@
 #include <QOpenGLShaderProgram>
 
 #include "displayheapwindow.h"
+#include "heaphistory.h"
 #include "vertex.h"
 
 // A "layer" -- a collection of bits of data, vertices, shaders etc. that
@@ -15,10 +16,11 @@
 class GLHeapDiagramLayer {
 public:
   GLHeapDiagramLayer(const std::string &vertex_shader_name,
-                     const std::string &fragment_shader_name,
-                     bool is_line_layer);
+    const std::string &fragment_shader_name,
+    bool is_line_layer);
   ~GLHeapDiagramLayer();
-  void initializeGLStructures(QOpenGLFunctions *parent);
+  void initializeGLStructures(
+    const HeapHistory& heap_history, QOpenGLFunctions *parent);
   void paintLayer(ivec2 minimum_tick, ivec3 maximum_tick,
                   const QMatrix2x2 &heap_to_screen);
 
@@ -31,8 +33,12 @@ public:
   // vertex and a vec4 for the color.
   virtual std::pair<vec4, vec4> vertexShaderSimulator(const HeapVertex&
     vertex) = 0;
+
+  virtual void loadVerticesFromHeapHistory(const HeapHistory& history) = 0;
+  void refreshGLBuffer();
+
   void debugDumpVertexTransformation();
-  void setDebug(bool value) { dump_debug_ = value; };
+  void setDebug(bool value) { dump_debug_ = value; }
 protected:
   void setupStandardUniforms();
   // Helper functions to set the uniforms for the shaders.

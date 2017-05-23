@@ -1,7 +1,14 @@
 #include "addressdiagramlayer.h"
+#include "heaphistory.h"
 
 AddressDiagramLayer::AddressDiagramLayer() :
   GLHeapDiagramLayer(":/address_shader.vert", ":/simple.frag", true) {
+}
+
+void AddressDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history) {
+  std::vector<HeapVertex> *vertices = getVertexVector();
+  vertices->clear();
+  history.addressesToVertices(vertices);
 }
 
 std::pair<vec4, vec4> AddressDiagramLayer::vertexShaderSimulator(const HeapVertex& vertex) {

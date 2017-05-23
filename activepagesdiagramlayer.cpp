@@ -4,6 +4,12 @@ ActivePagesDiagramLayer::ActivePagesDiagramLayer() :
   GLHeapDiagramLayer(":/active_pages.vert", ":/simple.frag", false) {
 }
 
+void ActivePagesDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history) {
+  std::vector<HeapVertex> *vertices = getVertexVector();
+  vertices->clear();
+  history.activePagesToVertices(vertices);
+}
+
 std::pair<vec4, vec4> ActivePagesDiagramLayer::vertexShaderSimulator(const HeapVertex& vertex) {
   ivec3 position(vertex.getX(), vertex.getY() & 0xFFFFFFFF, vertex.getY() >> 32);
   int visible_heap_base_A = visible_heap_base_A_;

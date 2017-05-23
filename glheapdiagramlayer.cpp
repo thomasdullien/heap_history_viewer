@@ -27,9 +27,18 @@ GLHeapDiagramLayer::~GLHeapDiagramLayer() {
   }
 }
 
+void GLHeapDiagramLayer::refreshGLBuffer() {
+  if (layer_vertex_buffer_.size() < layer_vertices_.size() * sizeof(HeapVertex)) {
+    layer_vertex_buffer_.allocate(layer_vertices_.size() * sizeof(HeapVertex));
+  }
+  layer_vertex_buffer_.write(0, &layer_vertices_[0],
+    layer_vertices_.size() * sizeof(HeapVertex));
+}
+
 // Mostly boilerplate code for OpenGL -- load the shaders, link and bind them,
 // create a vertex etc.
-void GLHeapDiagramLayer::initializeGLStructures(QOpenGLFunctions *parent) {
+void GLHeapDiagramLayer::initializeGLStructures(
+  const HeapHistory& heap_history, QOpenGLFunctions *parent) {
   // Load the shaders.
   layer_shader_program_->addShaderFromSourceFile(QOpenGLShader::Vertex,
                                                  vertex_shader_name_.c_str());
@@ -43,9 +52,8 @@ void GLHeapDiagramLayer::initializeGLStructures(QOpenGLFunctions *parent) {
   layer_vertex_buffer_.bind();
   layer_vertex_buffer_.setUsagePattern(QOpenGLBuffer::StaticDraw);
 
-  // The vertex buffer ought to be filled now..
-  layer_vertex_buffer_.allocate(&(layer_vertices_[0]),
-                                layer_vertices_.size() * sizeof(HeapVertex));
+  loadVerticesFromHeapHistory(heap_history);
+  refreshGLBuffer();
 
   setupStandardUniforms();
 
@@ -121,14 +129,10 @@ void GLHeapDiagramLayer::paintLayer(ivec2 tick, ivec3 address,
   setHeapBaseUniforms(address.x, address.y, address.z);
   setTickBaseUniforms(tick.x, tick.y);
 
-  //if (dump_debug_) {
-  //  debugDumpVertexTransformation();
-  //}
-
   {
     layer_vao_.bind();
     glDrawArrays(is_line_layer_ ? GL_LINES : GL_TRIANGLES, 0,
-                 layer_vertices_.size() * sizeof(HeapVertex));
+      layer_vertices_.size() * sizeof(HeapVertex));
     layer_vao_.release();
   }
   layer_shader_program_->release();

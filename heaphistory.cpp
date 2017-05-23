@@ -92,6 +92,19 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
   fflush(stdout);
 }
 
+bool HeapHistory::isBlockActive(const HeapBlock &block) const {
+  uint64_t min_tick = current_window_.getMinimumTick().getUint64();
+  uint64_t max_tick = current_window_.getMaximumTick().getUint64();
+
+  if ((block.start_tick_ < min_tick) && (block.end_tick_ < min_tick)) {
+    return false;
+  } else if ((block.start_tick_ > max_tick) && (block.end_tick_ > max_tick)) {
+    return false;
+  }
+
+  return true;
+}
+
 size_t HeapHistory::getActiveBlocks(
     std::vector<std::vector<HeapBlock>::iterator> *active_blocks) {
   // For the moment, implement a naive linear sweep of all heap blocks.
@@ -106,10 +119,6 @@ size_t HeapHistory::getActiveBlocks(
     }
   }
   return active_block_count;
-}
-
-bool HeapHistory::isBlockActive(const HeapBlock &block) {
-  return true;
 }
 
 void HeapHistory::setCurrentWindow(const HeapWindow &new_window) {
@@ -246,7 +255,11 @@ void HeapHistory::recordAddress(uint64_t address, const std::string &label,
       std::make_pair(ColorStringToUint32(color), label);
 }
 
-void HeapHistory::eventsToVertices(std::vector<HeapVertex> *vertices) {
+//============================================================================
+// Functions to fill HeapVertex vectors for rendering
+
+
+void HeapHistory::eventsToVertices(std::vector<HeapVertex> *vertices) const {
   // Add two vertices with 0 or 1 on the y axis, and the proper tick on the
   // x axis.
   for (const auto &event : tick_to_event_strings_) {
@@ -260,7 +273,7 @@ void HeapHistory::eventsToVertices(std::vector<HeapVertex> *vertices) {
   }
 }
 
-void HeapHistory::addressesToVertices(std::vector<HeapVertex> *vertices) {
+void HeapHistory::addressesToVertices(std::vector<HeapVertex> *vertices) const {
   // Add two vertices with 0 or 1 on the y axis, and the proper tick on the
   // x axis.
   for (const auto &event : address_to_address_strings_) {
@@ -277,7 +290,7 @@ void HeapHistory::addressesToVertices(std::vector<HeapVertex> *vertices) {
 
 // Determines all active pages ranges, and then provides rectangles covering the
 // active areas of memory in a light color.
-void HeapHistory::activePagesToVertices(std::vector<HeapVertex> *vertices) {
+void HeapHistory::activePagesToVertices(std::vector<HeapVertex> *vertices) const {
   std::set<uint64_t> active_pages;
 
   // Collect all active pages.
@@ -326,6 +339,28 @@ void HeapHistory::activePagesToVertices(std::vector<HeapVertex> *vertices) {
   }
 }
 
+// Write out 6 vertices (for two triangles) into the buffer.
+void HeapHistory::HeapBlockToVertices(const HeapBlock &block,
+                                      std::vector<HeapVertex> *vertices) const {
+  block.toVertices(current_tick_, vertices);
+}
+
+// Converts the vector of heap blocks in the current heap history to
+// heap vertices.
+size_t HeapHistory::heapBlockVerticesForActiveWindow(
+    std::vector<HeapVertex> *vertices) const {
+  size_t active_block_count = 0;
+  for (std::vector<HeapBlock>::const_iterator iter = heap_blocks_.begin();
+       iter != heap_blocks_.end(); ++iter) {
+    if (isBlockActive(*iter)) {
+      HeapBlockToVertices(*iter, vertices);
+      ++active_block_count;
+    }
+  }
+  return active_block_count;
+}
+
+
 bool HeapHistory::getEventAtTick(uint32_t tick, std::string *eventstring) {
   const auto iterator = tick_to_event_strings_.find(tick);
   if (iterator == tick_to_event_strings_.end()) {
@@ -352,26 +387,6 @@ bool HeapHistory::getEventAtTick(uint32_t tick, std::string *eventstring) {
   }
 }
 
-// Write out 6 vertices (for two triangles) into the buffer.
-void HeapHistory::HeapBlockToVertices(const HeapBlock &block,
-                                      std::vector<HeapVertex> *vertices) {
-  block.toVertices(current_tick_, vertices);
-}
-
-// Converts the vector of heap blocks in the current heap history to
-// heap vertices.
-size_t HeapHistory::heapBlockVerticesForActiveWindow(
-    std::vector<HeapVertex> *vertices) {
-  size_t active_block_count = 0;
-  for (std::vector<HeapBlock>::iterator iter = heap_blocks_.begin();
-       iter != heap_blocks_.end(); ++iter) {
-    if (isBlockActive(*iter)) {
-      HeapBlockToVertices(*iter, vertices);
-      ++active_block_count;
-    }
-  }
-  return active_block_count;
-}
 
 // Extremely slow O(n) version of testing if a given point lies within any
 // block.
@@ -414,7 +429,6 @@ void HeapHistory::updateCachedSortedIterators() {
 //
 // XXX: This code is still buggy, and does not seem to find all blocks.
 // TODO(thomasdullien): Debug and fix.
-//
 bool HeapHistory::getBlockAt(uint64_t address, uint32_t tick, HeapBlock *result,
                              uint32_t *index) {
   updateCachedSortedIterators();
@@ -461,34 +475,3 @@ void HeapHistory::zoomToPoint(double dx, double dy, double how_much_x,
                               max_width);
 }
 
-/*const ContinuousHeapWindow &
-HeapHistory::getGridWindow(uint32_t number_of_lines) {
-
-  // Find the first power-of-two p so that 16 * 2^p > height, and
-  // 16 * 2^p2 > width. Then update the grid_window_ variable and
-  // return it.
-  auto next_greater_pow2 = [number_of_lines](uint64_t limit) {
-    uint64_t p = 1;
-    while ((number_of_lines / 2) * p < limit) {
-      p = p << 1;
-    };
-    return p;
-  };
-  uint64_t p1 = next_greater_pow2(current_window_.height());
-  uint64_t p2 = next_greater_pow2(current_window_.width());
-
-  auto round_up = [](uint64_t input, uint64_t pow2) {
-    return input += (pow2 - (input % pow2));
-  };
-
-  grid_rectangle_.maximum_tick_ =
-      round_up(current_window_.maximum_tick_, p2 * (number_of_lines / 2));
-  grid_rectangle_.maximum_address_ =
-      round_up(current_window_.maximum_address_, p1 * number_of_lines / 2);
-  grid_rectangle_.minimum_tick_ =
-      grid_rectangle_.maximum_tick_ - p2 * number_of_lines;
-  grid_rectangle_.minimum_address_ =
-      grid_rectangle_.maximum_address_ - p1 * number_of_lines;
-  return grid_rectangle_;
-
-}*/

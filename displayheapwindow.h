@@ -42,7 +42,9 @@ public:
   bool setMinAndMaxAddress(ivec3 min_address, ivec3 max_address);
 
   ivec2 getMinimumTick() const { return minimum_tick_; }
+  ivec2 getMaximumTick() const { return maximum_tick_; }
   ivec3 getMinimumAddress() const { return minimum_address_; }
+  ivec3 getMaximumAddress() const { return maximum_address_; }
 
   long double getXScalingHeapToScreen() const;
   long double getYScalingHeapToScreen() const;

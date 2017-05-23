@@ -36,16 +36,8 @@ public:
     return current_window_;
   }
 
-  // Input reading.
+  // Read and parse a JSON stream.
   void LoadFromJSONStream(std::istream &jsondata);
-
-  // Attempts to find a block at a given address and tick. Currently broken,
-  // hence the two implementations (slow works).
-  // TODO(thomasdullien): Debug and fix the fast version.
-  bool getBlockAt(uint64_t address, uint32_t tick, HeapBlock *result,
-                  uint32_t *index);
-  bool getBlockAtSlow(uint64_t address, uint32_t tick, HeapBlock *result,
-                      uint32_t *index);
 
   // Record a memory allocation event. The code supports up to 256 different
   // heaps.
@@ -56,52 +48,70 @@ public:
   void recordEvent(const std::string& event_label, const std::string& color);
   void recordAddress(uint64_t address, const std::string& label, const std::string& color);
 
+  // Attempts to find a block at a given address and tick. Currently broken,
+  // hence the two implementations (slow works).
+  // TODO(thomasdullien): Debug and fix the fast version.
+  bool getBlockAt(uint64_t address, uint32_t tick, HeapBlock *result,
+                  uint32_t *index);
+  bool getBlockAtSlow(uint64_t address, uint32_t tick, HeapBlock *result,
+                      uint32_t *index);
+  bool getEventAtTick(uint32_t tick, std::string* eventstring);
+
+  uint64_t getMinimumAddress() const { return global_area_.minimum_address_; }
+  uint64_t getMaximumAddress() const { return global_area_.maximum_address_; }
+  uint32_t getMinimumTick() const { return global_area_.minimum_tick_; }
+  uint32_t getMaximumTick() const { return global_area_.maximum_tick_; }
+
   // Dump out triangles for the current window of heap events.
-  size_t heapBlockVerticesForActiveWindow(std::vector<HeapVertex> *vertices);
-  uint64_t getMinimumAddress() { return global_area_.minimum_address_; }
-  uint64_t getMaximumAddress() { return global_area_.maximum_address_; }
-  uint32_t getMinimumTick() { return global_area_.minimum_tick_; }
-  uint32_t getMaximumTick() { return global_area_.maximum_tick_; }
+  size_t heapBlockVerticesForActiveWindow(std::vector<HeapVertex> *vertices) const;
+  void eventsToVertices(std::vector<HeapVertex> *vertices) const;
+  void addressesToVertices(std::vector<HeapVertex> *vertices) const;
+  void activePagesToVertices(std::vector<HeapVertex> *vertices) const;
 
   // Functions for moving the currently visible window around.
   void panCurrentWindow(double dx, double dy);
   void zoomToPoint(double dx, double dy, double how_much_x, double how_much_y,
-                   long double max_height, long double max_width);
+    long double max_height, long double max_width);
 
-  void eventsToVertices(std::vector<HeapVertex> *vertices);
-  void addressesToVertices(std::vector<HeapVertex> *vertices);
-  void activePagesToVertices(std::vector<HeapVertex> *vertices);
-  bool getEventAtTick(uint32_t tick, std::string* eventstring);
 private:
   void recordMallocConflict(uint64_t address, size_t size, uint8_t heap_id);
   void recordFreeConflict(uint64_t address, uint8_t heap_id);
   void recordFreeRange(uint64_t low_end, uint64_t high_end, const std::string *tag, uint8_t heap_id);
   void recordFilterRange(uint64_t low, uint64_t high);
+
   bool isEventFiltered(uint64_t address);
-  bool isBlockActive(const HeapBlock &block);
+  bool isBlockActive(const HeapBlock &block) const;
+
   // Dumps 6 vertices for 2 triangles for a block into the output vector.
-  // TODO(thomasdullien): Optimize this to only dump 4 vertices?
+  // TODO(thomasdullien): Optimize this to only dump 4 vertices.
   void HeapBlockToVertices(const HeapBlock &block,
-                           std::vector<HeapVertex> *vertices);
+    std::vector<HeapVertex> *vertices) const;
+
   // When a new block has been put into the vector, this function needs to be
   // called to update the internal data structures for fast block search.
   void updateCachedSortedIterators();
+
   bool hasMandatoryJSONElementFields(const nlohmann::json &json_element);
 
   std::vector<std::vector<HeapBlock>::iterator>
       cached_blocks_sorted_by_address_;
+
   // Running counter to keep track of heap events.
   uint32_t current_tick_;
+
   // The currently active (visible, to-be-displayed) part of the heap history.
   DisplayHeapWindow current_window_;
 
   // The global size of all heap events.
   HeapWindow global_area_;
+
   // The vector of all heap blocks. This vector will be sorted by the minimum
   // tick of their allocation.
   std::vector<HeapBlock> heap_blocks_;
+
   // A map to keep track of blocks that are "currently live".
   std::map<std::pair<uint64_t, uint8_t>, size_t> live_blocks_;
+
   // A vector of ticks that records the conflicts in heap logic.
   std::vector<HeapConflict> conflicts_;
 

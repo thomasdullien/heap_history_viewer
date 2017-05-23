@@ -235,5 +235,5 @@ void main(void)
   //} else {
   //    vColor = vec4(0.0, 1.0, 0.0, 1.0);
   //}
-  vColor = vec4(color, 1.0);
+  vColor = vec4(color, 0.6);
 }

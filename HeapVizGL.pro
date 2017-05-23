@@ -26,7 +26,8 @@ SOURCES += main.cpp \
     heapblockdiagramlayer.cpp \
     eventdiagramlayer.cpp \
     addressdiagramlayer.cpp \
-    glsl_simulation_functions.cpp
+    glsl_simulation_functions.cpp \
+    activepagesdiagramlayer.cpp
 
 HEADERS  += heapvizwindow.h \
     glheapdiagram.h \
@@ -43,7 +44,8 @@ HEADERS  += heapvizwindow.h \
     heapblockdiagramlayer.h \
     eventdiagramlayer.h \
     addressdiagramlayer.h \
-    glsl_simulation_functions.h
+    glsl_simulation_functions.h \
+    activepagesdiagramlayer.h
 
 FORMS    += heapvizwindow.ui
 
@@ -51,3 +53,5 @@ FORMS    += heapvizwindow.ui
 
 RESOURCES += \
     resource.qrc
+
+DISTFILES +=

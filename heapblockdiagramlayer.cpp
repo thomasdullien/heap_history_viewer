@@ -4,6 +4,12 @@ HeapBlockDiagramLayer::HeapBlockDiagramLayer() :
   GLHeapDiagramLayer(":/simple.vert", ":/simple.frag", false) {
 }
 
+void HeapBlockDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history) {
+  std::vector<HeapVertex> *vertices = getVertexVector();
+  vertices->clear();
+  history.heapBlockVerticesForActiveWindow(vertices);
+}
+
 std::pair<vec4, vec4> HeapBlockDiagramLayer::vertexShaderSimulator(const HeapVertex& vertex) {
   ivec3 position(vertex.getX(), vertex.getY() & 0xFFFFFFFF, vertex.getY() >> 32);
   int visible_heap_base_A = visible_heap_base_A_;

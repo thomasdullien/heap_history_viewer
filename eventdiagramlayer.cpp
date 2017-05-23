@@ -4,6 +4,12 @@ EventDiagramLayer::EventDiagramLayer() :
   GLHeapDiagramLayer(":/event_shader.vert", ":/simple.frag", true) {
 }
 
+void EventDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history) {
+  std::vector<HeapVertex> *vertices = getVertexVector();
+  vertices->clear();
+  history.eventsToVertices(vertices);
+}
+
 std::pair<vec4, vec4> EventDiagramLayer::vertexShaderSimulator(const HeapVertex& vertex) {
   ivec3 position(vertex.getX(), vertex.getY() & 0xFFFFFFFF, vertex.getY() >> 32);
   int visible_heap_base_A = visible_heap_base_A_;
