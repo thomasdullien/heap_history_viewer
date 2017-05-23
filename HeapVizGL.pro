@@ -22,7 +22,11 @@ SOURCES += main.cpp \
     heapwindow.cpp \
     glheapdiagramlayer.cpp \
     gridlayer.cpp \
-    linearbrightnesscolorscale.cpp
+    linearbrightnesscolorscale.cpp \
+    heapblockdiagramlayer.cpp \
+    eventdiagramlayer.cpp \
+    addressdiagramlayer.cpp \
+    glsl_simulation_functions.cpp
 
 HEADERS  += heapvizwindow.h \
     glheapdiagram.h \
@@ -35,7 +39,11 @@ HEADERS  += heapvizwindow.h \
     heapwindow.h \
     glheapdiagramlayer.h \
     gridlayer.h \
-    linearbrightnesscolorscale.h
+    linearbrightnesscolorscale.h \
+    heapblockdiagramlayer.h \
+    eventdiagramlayer.h \
+    addressdiagramlayer.h \
+    glsl_simulation_functions.h
 
 FORMS    += heapvizwindow.ui
 
