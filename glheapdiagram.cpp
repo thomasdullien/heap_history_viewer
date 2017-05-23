@@ -21,6 +21,7 @@ GLHeapDiagram::GLHeapDiagram(QWidget *parent)
     : QOpenGLWidget(parent), block_layer_(new HeapBlockDiagramLayer()),
       event_layer_(new EventDiagramLayer()),
       address_layer_(new AddressDiagramLayer()),
+      pages_layer_(new ActivePagesDiagramLayer()),
       is_GL_initialized_(false), file_to_load_("") {
 
   //  QObject::connect(this, SIGNAL(blockClicked), parent->parent(),
@@ -52,7 +53,11 @@ void GLHeapDiagram::loadFileInternal() {
     heap_history_.addressesToVertices(address_vertices);
     address_layer_->initializeGLStructures(this);
 
-
+    // Initialize the address lines drawing layer.
+    std::vector<HeapVertex> *page_vertices =
+        pages_layer_->getVertexVector();
+    heap_history_.activePagesToVertices(page_vertices);
+    pages_layer_->initializeGLStructures(this);
   }
 }
 
@@ -100,31 +105,6 @@ bool GLHeapDiagram::screenToHeap(double x, double y, uint32_t *tick,
                                                                      address);
 }
 
-void GLHeapDiagram::debugDumpVerticesAndMappings() {
-  // heap_history_.getCurrentWindow().setDebug(true);
-  /*
-  int index = 0;
-  for (const HeapVertex &vertex : g_vertices) {
-    std::pair<float, float> vertex_mapped =
-        heap_history_.getCurrentWindow().mapHeapCoordinateToDisplay(
-            vertex.getX(), vertex.getY());
-
-    if ((vertex_mapped.first >= -1.0) && (vertex_mapped.second <= 1.0) &&
-        (vertex_mapped.second >= -1.0) && (vertex_mapped.second <= 1.0)) {
-            printf("[Debug][Normal] Vertex %d at %d, %lx -> %f %f\n", index,
-  vertex.getX(), vertex.getY(),
-                   vertex_mapped.first, vertex_mapped.second);
-      } else {
-             printf("[Debug][Weird!] Vertex %d at %d, %lx -> %f %f\n", index,
-  vertex.getX(), vertex.getY(),
-                   vertex_mapped.first, vertex_mapped.second);
-      }
-    ++index;
-  }
-  printf("[Debug] ----\n");
-  fflush(stdout);*/
-}
-
 void GLHeapDiagram::paintGL() {
   glClear(GL_COLOR_BUFFER_BIT);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -135,16 +115,20 @@ void GLHeapDiagram::paintGL() {
   // Enable for verbose output of the simulated shaders.
   heap_window.setDebug(false);
 
+  pages_layer_->paintLayer(heap_window.getMinimumTick(),
+                           heap_window.getMinimumAddress(),
+                           heap_to_screen_matrix_);
+
+
   block_layer_->paintLayer(heap_window.getMinimumTick(),
                            heap_window.getMinimumAddress(),
                            heap_to_screen_matrix_);
 
-  glLineWidth(1.5f);
+  glLineWidth(2.0f);
   event_layer_->paintLayer(heap_window.getMinimumTick(),
                            heap_window.getMinimumAddress(),
                            heap_to_screen_matrix_);
 
-  address_layer_->setDebug(true);
   address_layer_->paintLayer(heap_window.getMinimumTick(),
                              heap_window.getMinimumAddress(),
                              heap_to_screen_matrix_);

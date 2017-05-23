@@ -1,6 +1,7 @@
 #include <QtTest/QtTest>
 
 #include "displayheapwindow.h"
+#include "glsl_simulation_functions.h"
 #include "heapwindow.h"
 #include "testdisplayheapwindow.h"
 
@@ -75,10 +76,8 @@ void TestDisplayHeapWindow::MapFromHeapToScreenMaximumPositiveSizes() {
   // 32-bit tick space, left-shifted by 4 bits.
   ivec2 maximum_tick(0xFFFFFFF0, 0xF);
 
-  display_heap_window.setMaximumAddress(maximum_address);
-  display_heap_window.setMinimumAddress(minimum_address);
-  display_heap_window.setMaximumTick(maximum_tick);
-  display_heap_window.setMinimumTick(minimum_tick);
+  display_heap_window.setMinAndMaxAddress(minimum_address, maximum_address);
+  display_heap_window.setMinAndMaxTick(minimum_tick, maximum_tick);
 
   auto result = display_heap_window.mapHeapCoordinateToDisplay(
       0xFFFFFFFF, 0xFFFFFFFFFFFFFFFFUL);
@@ -117,10 +116,8 @@ void TestDisplayHeapWindow::MapFromHeapToScreenBottomLeftWindow() {
   minimum_tick = Sub64(minimum_tick, half_window_width);
   maximum_tick = Sub64(maximum_tick, half_window_width);
 
-  display_heap_window.setMaximumAddress(maximum_address);
-  display_heap_window.setMinimumAddress(minimum_address);
-  display_heap_window.setMaximumTick(maximum_tick);
-  display_heap_window.setMinimumTick(minimum_tick);
+  display_heap_window.setMinAndMaxAddress(minimum_address, maximum_address);
+  display_heap_window.setMinAndMaxTick(minimum_tick, maximum_tick);
 
   // The origin of the heap coordinate system should now map to the center
   // of the screen.
@@ -160,10 +157,8 @@ void TestDisplayHeapWindow::MapFromHeapToScreenTopRightWindow() {
   minimum_tick = Add64(minimum_tick, half_window_width);
   maximum_tick = Add64(maximum_tick, half_window_width);
 
-  display_heap_window.setMaximumAddress(maximum_address);
-  display_heap_window.setMinimumAddress(minimum_address);
-  display_heap_window.setMaximumTick(maximum_tick);
-  display_heap_window.setMinimumTick(minimum_tick);
+  display_heap_window.setMinAndMaxAddress(minimum_address, maximum_address);
+  display_heap_window.setMinAndMaxTick(minimum_tick, maximum_tick);
 
   // The origin of the heap coordinate system should now map to the center
   // of the screen.

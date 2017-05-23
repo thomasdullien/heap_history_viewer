@@ -75,11 +75,7 @@ void DisplayHeapWindow::pan(double dx, double dy) {
   long double pan_y = dy * height;
   ivec2 pan_x_64 = LongDoubleTo64Bits(pan_x);
   ivec2 new_minimum_tick = Add64(minimum_tick_, pan_x_64);
-  // TODO(thomasdullien): Re-visit this logic - is the minimum tick
-  // allowed to go negative or is this a no-no?
-  if (new_minimum_tick.getUint64() & 0x8000000000000000) {
-    new_minimum_tick.setUint64(0);
-  }
+
   ivec2 new_maximum_tick = Add64(maximum_tick_, pan_x_64);
   ivec3 pan_y_96 = LongDoubleTo96Bits(pan_y);
   ivec3 new_maximum_address = Add96(maximum_address_, pan_y_96);

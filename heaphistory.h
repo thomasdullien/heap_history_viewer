@@ -70,6 +70,7 @@ public:
 
   void eventsToVertices(std::vector<HeapVertex> *vertices);
   void addressesToVertices(std::vector<HeapVertex> *vertices);
+  void activePagesToVertices(std::vector<HeapVertex> *vertices);
   bool getEventAtTick(uint32_t tick, std::string* eventstring);
 private:
   void recordMallocConflict(uint64_t address, size_t size, uint8_t heap_id);

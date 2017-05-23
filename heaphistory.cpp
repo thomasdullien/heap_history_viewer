@@ -275,6 +275,57 @@ void HeapHistory::addressesToVertices(std::vector<HeapVertex> *vertices) {
   }
 }
 
+// Determines all active pages ranges, and then provides rectangles covering the
+// active areas of memory in a light color.
+void HeapHistory::activePagesToVertices(std::vector<HeapVertex> *vertices) {
+  std::set<uint64_t> active_pages;
+
+  // Collect all active pages.
+  for (const HeapBlock& block : heap_blocks_) {
+    for (uint64_t page = block.address_ >> 12;
+         page <= (block.address_ + block.size_) >> 12;
+         ++page) {
+      active_pages.insert(page);
+    }
+  }
+
+  std::map<uint64_t, uint64_t> address_ranges;
+  // Iterate over active pages.
+  for (std::set<uint64_t>::const_iterator lower = active_pages.begin();
+    lower != active_pages.end(); ++lower) {
+    uint64_t lower_bound = *lower;
+    uint64_t last_value = lower_bound;
+    for (std::set<uint64_t>::const_iterator higher = lower;
+      higher != active_pages.end() && ((*higher-last_value) == 1);
+      ++higher) {
+      last_value = *higher;
+      lower = higher;
+    }
+    address_ranges[lower_bound * 0x1000] = last_value * 0x1000;
+    printf("Active range %lx -> %lx\n", lower_bound * 0x1000, last_value * 0x1000);
+  }
+
+  QVector3D color = QVector3D(0.0, 0.7, 0.0);
+  uint32_t lower_left_x = 0; // Minimum Tick.
+  uint32_t lower_right_x = getMaximumTick();
+  for (std::pair<uint64_t, uint64_t> range : address_ranges) {
+    uint64_t lower_left_y = range.first;
+    uint64_t lower_right_y = lower_left_y;
+    uint32_t upper_right_x = lower_right_x;
+    uint64_t upper_right_y = range.second + 0xFFF; // Upper end of the last page
+    uint32_t upper_left_x = lower_left_x;
+    uint64_t upper_left_y = upper_right_y;
+
+    vertices->push_back(HeapVertex(lower_left_x, lower_left_y, color));
+    vertices->push_back(HeapVertex(lower_right_x, lower_right_y, color));
+    vertices->push_back(HeapVertex(upper_left_x, upper_left_y, color));
+    vertices->push_back(HeapVertex(lower_right_x, lower_right_y, color));
+    vertices->push_back(
+      HeapVertex(upper_right_x, upper_right_y, color));
+    vertices->push_back(HeapVertex(upper_left_x, upper_left_y, color));
+  }
+}
+
 bool HeapHistory::getEventAtTick(uint32_t tick, std::string *eventstring) {
   const auto iterator = tick_to_event_strings_.find(tick);
   if (iterator == tick_to_event_strings_.end()) {
