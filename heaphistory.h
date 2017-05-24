@@ -31,8 +31,6 @@ public:
 class HeapHistory {
 public:
   HeapHistory();
-  size_t
-  getActiveBlocks(std::vector<std::vector<HeapBlock>::iterator> *active_blocks);
   void setCurrentWindow(const HeapWindow &new_window);
   void setCurrentWindowToGlobal() { current_window_.reset(global_area_); }
 
@@ -84,7 +82,7 @@ private:
   void recordFilterRange(uint64_t low, uint64_t high);
 
   bool isEventFiltered(uint64_t address);
-  bool isBlockActive(const HeapBlock &block) const;
+  bool isBlockActive(const HeapBlock &block, uint64_t min_size) const;
 
   // Dumps 6 vertices for 2 triangles for a block into the output vector.
   // TODO(thomasdullien): Optimize this to only dump 4 vertices.

@@ -92,7 +92,34 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
   fflush(stdout);
 }
 
-bool HeapHistory::isBlockActive(const HeapBlock &block) const {
+
+// Decide whether a block is worth sending to the graphics card.
+bool HeapHistory::isBlockActive(const HeapBlock &block, uint64_t min_size) const {
+  // Is it big enough to be visible on the screen? (at least 1/500th of the screen height).
+  if (block.size_ < min_size) {
+    return false;
+  }
+  // Is it located above the current screen?
+  ivec3 max_address = current_window_.getMaximumAddress();
+  ivec3 min_address = current_window_.getMinimumAddress();
+  ivec3 block_lower = Load64BitLeftShiftedBy4Into96Bit(
+    block.address_ & 0xFFFFFFFF,
+    block.address_ >> 32);
+  ivec3 difference = Sub96(block_lower, max_address);
+  if ((difference.z & 0x80000000) == 0) {
+    return false;
+  }
+  // Is it located below the current screen?
+  uint64_t block_upper = block.address_ + block.size_;
+  ivec3 block_upper_bound = Load64BitLeftShiftedBy4Into96Bit(
+    block_upper & 0xFFFFFFFF,
+    block_upper >> 32);
+  difference = Sub96(min_address, block_upper_bound);
+  if ((difference.z & 0x80000000) == 0) {
+    return false;
+  }
+  return true;
+
   /* TODO(thomasdullien): Implement culling of currently-unused blocks and
    * blocks that would render too small.
 
@@ -112,21 +139,6 @@ bool HeapHistory::isBlockActive(const HeapBlock &block) const {
   return true;
 }
 
-size_t HeapHistory::getActiveBlocks(
-    std::vector<std::vector<HeapBlock>::iterator> *active_blocks) {
-  // For the moment, implement a naive linear sweep of all heap blocks.
-  // This can certainly be made better, but keeping it simple has priority
-  // for the moment.
-  size_t active_block_count = 0;
-  for (std::vector<HeapBlock>::iterator iter = heap_blocks_.begin();
-       iter != heap_blocks_.end(); ++iter) {
-    if (isBlockActive(*iter)) {
-      active_blocks->push_back(iter);
-      ++active_block_count;
-    }
-  }
-  return active_block_count;
-}
 
 void HeapHistory::setCurrentWindow(const HeapWindow &new_window) {
   current_window_.reset(new_window);
@@ -353,13 +365,20 @@ void HeapHistory::HeapBlockToVertices(const HeapBlock &block,
 }
 
 // Converts the vector of heap blocks in the current heap history to
-// heap vertices.
+// heap vertices. Filters out elements that are too small to be rendered
+// or fall outside of the current screen.
 size_t HeapHistory::heapBlockVerticesForActiveWindow(
     std::vector<HeapVertex> *vertices) const {
+
+  long double yscaling = current_window_.getYScalingHeapToScreen();
+  long double minimum_size = ((1.0/500.0) / yscaling);
+  uint64_t uint_min_size = uint64_t(minimum_size);
+  printf("[!] Minimum size is %lx\n", uint_min_size);
+
   size_t active_block_count = 0;
   for (std::vector<HeapBlock>::const_iterator iter = heap_blocks_.begin();
        iter != heap_blocks_.end(); ++iter) {
-    if (isBlockActive(*iter)) {
+    if (isBlockActive(*iter, uint_min_size)) {
       HeapBlockToVertices(*iter, vertices);
       ++active_block_count;
     }
