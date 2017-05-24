@@ -99,6 +99,7 @@ bool HeapHistory::isBlockActive(const HeapBlock &block, uint64_t min_size) const
   if (block.size_ < min_size) {
     return false;
   }
+
   // Is it located above the current screen?
   ivec3 max_address = current_window_.getMaximumAddress();
   ivec3 min_address = current_window_.getMinimumAddress();
@@ -115,27 +116,10 @@ bool HeapHistory::isBlockActive(const HeapBlock &block, uint64_t min_size) const
     block_upper & 0xFFFFFFFF,
     block_upper >> 32);
   difference = Sub96(min_address, block_upper_bound);
+
   if ((difference.z & 0x80000000) == 0) {
-    return false;
+    return true; // TODO(thomasdullien) Why do some blocks vanish wrongly if this is false?
   }
-  return true;
-
-  /* TODO(thomasdullien): Implement culling of currently-unused blocks and
-   * blocks that would render too small.
-
-  ivec2 min_tick = current_window_.getMinimumTick();
-  ivec2 max_tick = current_window_.getMaximumTick();
-
-  // If min_tick is positive, remove all blocks that fall to the left of it.
-  if (!min_tick.isNegative() &&
-    (block.end_tick_ < min_tick.getUint64())) {
-    return false;
-  }
-  */
-  /*else if ((block.start_tick_ > max_tick) && (block.end_tick_ > max_tick)) {
-    return false;
-  }*/
-
   return true;
 }
 
@@ -277,15 +261,19 @@ void HeapHistory::recordAddress(uint64_t address, const std::string &label,
 //============================================================================
 // Functions to fill HeapVertex vectors for rendering
 
+void colorToFloats(uint32_t color, float* red, float* green, float* blue) {
+  *red = static_cast<float>((color & 0xFF0000) >> 16) / 255.0;
+  *green = static_cast<float>((color & 0xFF00) >> 8) / 255.0;
+  *blue = static_cast<float>(color & 0xFF) / 255.0;
+}
 
 void HeapHistory::eventsToVertices(std::vector<HeapVertex> *vertices) const {
   // Add two vertices with 0 or 1 on the y axis, and the proper tick on the
   // x axis.
   for (const auto &event : tick_to_event_strings_) {
     uint32_t color = event.second.first;
-    float red = static_cast<float>((color & 0xFF0000) >> 16) / 255.0;
-    float green = static_cast<float>((color & 0xFF00) >> 8) / 255.0;
-    float blue = static_cast<float>(color & 0xFF) / 255.0;
+    float red, green, blue;
+    colorToFloats(color, &red, &green, &blue);
 
     vertices->push_back(HeapVertex(event.first, 0, QVector3D(red, green, blue)));
     vertices->push_back(HeapVertex(event.first, 1, QVector3D(red, green, blue)));
@@ -297,45 +285,62 @@ void HeapHistory::addressesToVertices(std::vector<HeapVertex> *vertices) const {
   // x axis.
   for (const auto &event : address_to_address_strings_) {
     uint32_t color = event.second.first;
-
-    float red = static_cast<float>(color & 0xFF0000 >> 16) / 255.0;
-    float green = static_cast<float>(color & 0xFF00 >> 8) / 255.0;
-    float blue = static_cast<float>(color & 0xFF) / 255.0;
+    float red, green, blue;
+    colorToFloats(color, &red, &green, &blue);
 
     vertices->push_back(HeapVertex(0, event.first, QVector3D(red, green, blue)));
     vertices->push_back(HeapVertex(1, event.first, QVector3D(red, green, blue)));
   }
 }
 
-// Determines all active pages ranges, and then provides rectangles covering the
-// active areas of memory in a light color.
-void HeapHistory::activePagesToVertices(std::vector<HeapVertex> *vertices) const {
-  std::set<uint64_t> active_pages;
+void HeapHistory::getActiveRegions(std::map<uint64_t, uint64_t>* regions,
+  uint64_t* out_size) const {
+  // Calculate what the proper size of a "region" should be at the current zoom
+  // level. We take 1/100 of the screen height at the moment.
+  long double yscaling = current_window_.getYScalingHeapToScreen();
+  long double minimum_size = ((1.0/100.0) / yscaling);
+  uint64_t uint_minsize = static_cast<uint64_t>(minimum_size);
+  // Ensure a minimum size of 4096 bytes for the regions to consider.
+  int shift_value = std::min(64 - __builtin_clzl(uint_minsize), 12);
+  uint64_t region_size = static_cast<uint64_t>(1) << shift_value;
+  *out_size = region_size;
+  printf("Active region size is %ld bytes!\n", region_size);
 
-  // Collect all active pages.
+  // Now that we have the size, collect the active regions.
+  std::set<uint64_t> active_regions;
   for (const HeapBlock& block : heap_blocks_) {
-    for (uint64_t page = block.address_ >> 12;
-         page <= (block.address_ + block.size_) >> 12;
+    for (uint64_t page = block.address_ >> shift_value;
+         page <= (block.address_ + block.size_) >> shift_value;
          ++page) {
-      active_pages.insert(page);
+      active_regions.insert(page);
     }
   }
 
-  std::map<uint64_t, uint64_t> address_ranges;
-  // Iterate over active pages.
-  for (std::set<uint64_t>::const_iterator lower = active_pages.begin();
-    lower != active_pages.end(); ++lower) {
+  std::map<uint64_t, uint64_t>& address_ranges = *regions;
+  // Iterate over active regions and build address ranges from them.
+  for (std::set<uint64_t>::const_iterator lower = active_regions.begin();
+    lower != active_regions.end(); ++lower) {
     uint64_t lower_bound = *lower;
     uint64_t last_value = lower_bound;
     for (std::set<uint64_t>::const_iterator higher = lower;
-      higher != active_pages.end() && ((*higher-last_value) == 1);
+      higher != active_regions.end() && ((*higher-last_value) == 1);
       ++higher) {
       last_value = *higher;
       lower = higher;
     }
-    address_ranges[lower_bound * 0x1000] = last_value * 0x1000;
-    printf("Active range %lx -> %lx\n", lower_bound * 0x1000, last_value * 0x1000);
+    address_ranges[lower_bound * region_size] = last_value * region_size;
+    printf("Active range %lx -> %lx\n", lower_bound * region_size,
+      last_value * region_size);
   }
+}
+
+// Determines all active pages ranges, and then provides rectangles covering the
+// active areas of memory in a light color.
+void HeapHistory::activeRegionsToVertices(std::vector<HeapVertex> *vertices) const {
+  std::map<uint64_t, uint64_t> address_ranges;
+  uint64_t region_size;
+  // Determine the correct active regions on this zoom level.
+  getActiveRegions(&address_ranges, &region_size);
 
   QVector3D color = QVector3D(0.0, 0.7, 0.0);
   uint32_t lower_left_x = 0; // Minimum Tick.
@@ -344,7 +349,7 @@ void HeapHistory::activePagesToVertices(std::vector<HeapVertex> *vertices) const
     uint64_t lower_left_y = range.first;
     uint64_t lower_right_y = lower_left_y;
     uint32_t upper_right_x = lower_right_x;
-    uint64_t upper_right_y = range.second + 0xFFF; // Upper end of the last page
+    uint64_t upper_right_y = range.second + region_size; // Upper end of the last page
     uint32_t upper_left_x = lower_left_x;
     uint64_t upper_left_y = upper_right_y;
 
@@ -371,9 +376,9 @@ size_t HeapHistory::heapBlockVerticesForActiveWindow(
     std::vector<HeapVertex> *vertices) const {
 
   long double yscaling = current_window_.getYScalingHeapToScreen();
-  long double minimum_size = ((1.0/500.0) / yscaling);
+  long double minimum_size = ((1.0/50.0) / yscaling);
   uint64_t uint_min_size = uint64_t(minimum_size);
-  printf("[!] Minimum size is %lx\n", uint_min_size);
+  printf("[!] Minimum size is %ld\n", uint_min_size);
 
   size_t active_block_count = 0;
   for (std::vector<HeapBlock>::const_iterator iter = heap_blocks_.begin();
@@ -381,6 +386,10 @@ size_t HeapHistory::heapBlockVerticesForActiveWindow(
     if (isBlockActive(*iter, uint_min_size)) {
       HeapBlockToVertices(*iter, vertices);
       ++active_block_count;
+    } else {
+      if (iter->address_ == 0x7FFFF3FD5000UL) {
+        printf("Skipping vanishing block?\n");
+      }
     }
   }
   return active_block_count;

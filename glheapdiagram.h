@@ -10,7 +10,7 @@
 #include <QOpenGLFunctions>
 #include <QPoint>
 
-#include "activepagesdiagramlayer.h"
+#include "activeregionsdiagramlayer.h"
 #include "addressdiagramlayer.h"
 #include "eventdiagramlayer.h"
 #include "glheapdiagramlayer.h"
@@ -82,7 +82,7 @@ private:
   std::unique_ptr<HeapBlockDiagramLayer> block_layer_;
   std::unique_ptr<EventDiagramLayer> event_layer_;
   std::unique_ptr<AddressDiagramLayer> address_layer_;
-  std::unique_ptr<ActivePagesDiagramLayer> pages_layer_;
+  std::unique_ptr<ActiveRegionsDiagramLayer> pages_layer_;
 
   // The heap history.
   HeapHistory heap_history_;

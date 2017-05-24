@@ -27,7 +27,7 @@ SOURCES += main.cpp \
     eventdiagramlayer.cpp \
     addressdiagramlayer.cpp \
     glsl_simulation_functions.cpp \
-    activepagesdiagramlayer.cpp
+    activeregionsdiagramlayer.cpp
 
 HEADERS  += heapvizwindow.h \
     glheapdiagram.h \
@@ -45,7 +45,7 @@ HEADERS  += heapvizwindow.h \
     eventdiagramlayer.h \
     addressdiagramlayer.h \
     glsl_simulation_functions.h \
-    activepagesdiagramlayer.h
+    activeregionsdiagramlayer.h
 
 FORMS    += heapvizwindow.ui
 

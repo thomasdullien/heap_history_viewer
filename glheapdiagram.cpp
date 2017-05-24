@@ -21,7 +21,7 @@ GLHeapDiagram::GLHeapDiagram(QWidget *parent)
     : QOpenGLWidget(parent), block_layer_(new HeapBlockDiagramLayer()),
       event_layer_(new EventDiagramLayer()),
       address_layer_(new AddressDiagramLayer()),
-      pages_layer_(new ActivePagesDiagramLayer()),
+      pages_layer_(new ActiveRegionsDiagramLayer()),
       is_GL_initialized_(false), file_to_load_("") {
 
   //  QObject::connect(this, SIGNAL(blockClicked), parent->parent(),

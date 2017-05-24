@@ -176,7 +176,7 @@ vec4 IntToColor(int argument) {
 }
 
 int FloatToInt(float argument) {
-   argument = argument;// * 256.0;
+   argument = argument;
    return int(argument);
 }
 

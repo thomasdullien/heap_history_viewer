@@ -68,7 +68,9 @@ public:
   size_t heapBlockVerticesForActiveWindow(std::vector<HeapVertex> *vertices) const;
   void eventsToVertices(std::vector<HeapVertex> *vertices) const;
   void addressesToVertices(std::vector<HeapVertex> *vertices) const;
-  void activePagesToVertices(std::vector<HeapVertex> *vertices) const;
+  void activeRegionsToVertices(std::vector<HeapVertex> *vertices) const;
+
+
 
   // Functions for moving the currently visible window around.
   void panCurrentWindow(double dx, double dy);
@@ -83,6 +85,12 @@ private:
 
   bool isEventFiltered(uint64_t address);
   bool isBlockActive(const HeapBlock &block, uint64_t min_size) const;
+
+  // Returns coarse-grained intervals of regions of memory that see activity. The size
+  // of these regions are byte-powers-of-two depending on the current zoom level, but
+  // never less than page size (4k).
+  void getActiveRegions(std::map<uint64_t, uint64_t>* regions,
+    uint64_t* out_size) const;
 
   // Dumps 6 vertices for 2 triangles for a block into the output vector.
   // TODO(thomasdullien): Optimize this to only dump 4 vertices.

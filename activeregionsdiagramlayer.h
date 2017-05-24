@@ -2,9 +2,9 @@
 #define ACTIVEPAGESDIAGRAMLAYER_H
 #include "glheapdiagramlayer.h"
 
-class ActivePagesDiagramLayer : public GLHeapDiagramLayer {
+class ActiveRegionsDiagramLayer : public GLHeapDiagramLayer {
 public:
-  ActivePagesDiagramLayer();
+  ActiveRegionsDiagramLayer();
   std::pair<vec4, vec4> vertexShaderSimulator(const HeapVertex& vertex);
   void loadVerticesFromHeapHistory(const HeapHistory& history);
 };
