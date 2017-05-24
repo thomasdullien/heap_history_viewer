@@ -116,7 +116,6 @@ inline bool HeapHistory::isBlockActive(const HeapBlock &block,
   return true;
 }
 
-
 void HeapHistory::setCurrentWindow(const HeapWindow &new_window) {
   current_window_.reset(new_window);
 }

@@ -166,13 +166,9 @@ uint64_t intToUint64(int value) {
 
 uint64_t Convert96BitTo64BitRightShift(ivec3 input) {
   uint64_t result = intToUint64(input.x) >> 4;
-  printf("Result1: %lx\n", result);
   result |= (intToUint64(input.y) & 0xF) << 28;
-  printf("Result2: %lx\n", result);
   result |= (intToUint64(input.y) & 0xFFFFFFF0) << 28;
-  printf("Result3: %lx\n", result);
   result |= (intToUint64(input.z) & 0xF) << 60;
-  printf("Result4: %lx\n", result);
   return result;
 }
 
