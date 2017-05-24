@@ -18,6 +18,14 @@ void TestDisplayHeapWindow::TestLongDoubleTo96Bits() {
   QCOMPARE(result.z, 0);
 }
 
+void TestDisplayHeapWindow::Test96ToAndFromConversion() {
+  uint64_t testvalue = 0xFEDCBA9876543210;
+  ivec3 vec = Load64BitLeftShiftedBy4Into96Bit(
+    testvalue & 0xFFFFFFFF, testvalue >> 32);
+  uint64_t result = Convert96BitTo64BitRightShift(vec);
+  QCOMPARE(result, testvalue);
+}
+
 void TestDisplayHeapWindow::Test96BitFlipBits() {
   ivec3 result;
   result.flipBit(0);

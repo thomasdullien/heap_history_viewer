@@ -27,17 +27,26 @@ GLHeapDiagramLayer::~GLHeapDiagramLayer() {
   }
 }
 
-void GLHeapDiagramLayer::refreshGLBuffer() {
-  if (layer_vertex_buffer_.size() < layer_vertices_.size() * sizeof(HeapVertex)) {
+void GLHeapDiagramLayer::refreshGLBuffer(bool bind) {
+  if (bind) {
+    layer_vertex_buffer_.bind();
+  }
+  if (layer_vertex_buffer_.size() < (layer_vertices_.size() * sizeof(HeapVertex))) {
+    printf("Growing vertex buffer to %d vertices\n", layer_vertices_.size());
     layer_vertex_buffer_.allocate(layer_vertices_.size() * sizeof(HeapVertex));
   }
+  printf("Writing %d, layer_vertex_buffer_.size() is %d/%d vertices\n", layer_vertices_.size(),
+    layer_vertex_buffer_.size(), layer_vertices_.size() * 6);
   layer_vertex_buffer_.write(0, &layer_vertices_[0],
     layer_vertices_.size() * sizeof(HeapVertex));
+  if (bind) {
+    layer_vertex_buffer_.release();
+  }
 }
 
-void GLHeapDiagramLayer::refreshVertices(const HeapHistory& heap_history) {
+void GLHeapDiagramLayer::refreshVertices(const HeapHistory& heap_history, bool bind) {
   loadVerticesFromHeapHistory(heap_history);
-  refreshGLBuffer();
+  refreshGLBuffer(bind);
 }
 
 // Mostly boilerplate code for OpenGL -- load the shaders, link and bind them,
@@ -55,9 +64,9 @@ void GLHeapDiagramLayer::initializeGLStructures(
   // Create the heap block vertex buffer.
   layer_vertex_buffer_.create();
   layer_vertex_buffer_.bind();
-  layer_vertex_buffer_.setUsagePattern(QOpenGLBuffer::StaticDraw);
+  layer_vertex_buffer_.setUsagePattern(QOpenGLBuffer::DynamicDraw);
 
-  refreshVertices(heap_history);
+  refreshVertices(heap_history, false);
 
   setupStandardUniforms();
 

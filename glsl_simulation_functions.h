@@ -17,7 +17,7 @@ public:
     x = a;
     y = b;
   }
-  bool isNegative() {
+  bool isNegative() const {
     return (y & 0x80000000) != 0;
   }
   void setUint64(uint64_t a) {
@@ -74,6 +74,10 @@ public:
     x = a;
     y = b;
     z = c;
+  }
+
+  bool isNegative() const {
+    return (z & 0x80000000) != 0;
   }
 
   uint64_t getLowUint64() const {
@@ -159,6 +163,7 @@ ivec3 Load64BitLeftShiftedBy4Into96Bit(int low, int high);
 ivec2 Load32BitLeftShiftedBy4Into64Bit(int low);
 
 // Functions that are not necessarily needed in GLSL.
+uint64_t Convert96BitTo64BitRightShift(ivec3 input);
 ivec2 LongDoubleTo64Bits(long double value);
 ivec3 LongDoubleTo96Bits(long double value);
 const std::string ivec3ToHex(const ivec3& iv3);

@@ -92,33 +92,26 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
   fflush(stdout);
 }
 
-
 // Decide whether a block is worth sending to the graphics card.
-bool HeapHistory::isBlockActive(const HeapBlock &block, uint64_t min_size) const {
+inline bool HeapHistory::isBlockActive(const HeapBlock &block,
+  uint64_t min_size, uint64_t min_address, uint64_t max_address,
+  uint64_t min_tick, uint64_t max_tick) const {
+
   // Is it big enough to be visible on the screen? (at least 1/500th of the screen height).
   if (block.size_ < min_size) {
     return false;
   }
-
-  // Is it located above the current screen?
-  ivec3 max_address = current_window_.getMaximumAddress();
-  ivec3 min_address = current_window_.getMinimumAddress();
-  ivec3 block_lower = Load64BitLeftShiftedBy4Into96Bit(
-    block.address_ & 0xFFFFFFFF,
-    block.address_ >> 32);
-  ivec3 difference = Sub96(block_lower, max_address);
-  if ((difference.z & 0x80000000) == 0) {
+  if (block.address_ > max_address) {
     return false;
   }
-  // Is it located below the current screen?
-  uint64_t block_upper = block.address_ + block.size_;
-  ivec3 block_upper_bound = Load64BitLeftShiftedBy4Into96Bit(
-    block_upper & 0xFFFFFFFF,
-    block_upper >> 32);
-  difference = Sub96(min_address, block_upper_bound);
-
-  if ((difference.z & 0x80000000) == 0) {
-    return true; // TODO(thomasdullien) Why do some blocks vanish wrongly if this is false?
+  if (block.address_ + block.size_ < min_address) {
+    return false;
+  }
+  if (block.end_tick_ < min_tick) {
+    return false;
+  }
+  if (block.start_tick_ > max_tick) {
+    return false;
   }
   return true;
 }
@@ -369,29 +362,35 @@ void HeapHistory::HeapBlockToVertices(const HeapBlock &block,
   block.toVertices(current_tick_, vertices);
 }
 
+inline uint64_t HeapHistory::getMinimumBlockSize() const {
+  long double yscaling = current_window_.getYScalingHeapToScreen();
+  long double minimum_size = ((1.0/50.0) / yscaling);
+  uint64_t uint_min_size = uint64_t(minimum_size);
+  return uint_min_size;
+}
+
 // Converts the vector of heap blocks in the current heap history to
 // heap vertices. Filters out elements that are too small to be rendered
 // or fall outside of the current screen.
 size_t HeapHistory::heapBlockVerticesForActiveWindow(
     std::vector<HeapVertex> *vertices) const {
-
-  long double yscaling = current_window_.getYScalingHeapToScreen();
-  long double minimum_size = ((1.0/50.0) / yscaling);
-  uint64_t uint_min_size = uint64_t(minimum_size);
-  printf("[!] Minimum size is %ld\n", uint_min_size);
+  uint64_t uint_min_size = getMinimumBlockSize();
+  uint64_t minimum_address = current_window_.getMinimumAddressUint64();
+  uint64_t maximum_address = current_window_.getMaximumAddressUint64();
+  uint64_t minimum_tick = current_window_.getMinimumTickUint32();
+  uint64_t maximum_tick = current_window_.getMaximumTickUint32();
 
   size_t active_block_count = 0;
   for (std::vector<HeapBlock>::const_iterator iter = heap_blocks_.begin();
        iter != heap_blocks_.end(); ++iter) {
-    if (isBlockActive(*iter, uint_min_size)) {
+    bool active = isBlockActive(*iter, uint_min_size, minimum_address,
+                           maximum_address, minimum_tick, maximum_tick);
+    if (active) {
       HeapBlockToVertices(*iter, vertices);
       ++active_block_count;
-    } else {
-      if (iter->address_ == 0x7FFFF3FD5000UL) {
-        printf("Skipping vanishing block?\n");
-      }
     }
   }
+
   return active_block_count;
 }
 

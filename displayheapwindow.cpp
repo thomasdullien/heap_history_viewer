@@ -6,9 +6,9 @@
 DisplayHeapWindow::DisplayHeapWindow() {}
 
 DisplayHeapWindow::DisplayHeapWindow(const ivec2 &minimum_tick,
-                                     const ivec2 &maximum_tick,
-                                     const ivec3 &minimum_address,
-                                     const ivec3 &maximum_address) {
+  const ivec2 &maximum_tick,
+  const ivec3 &minimum_address,
+  const ivec3 &maximum_address) {
   setMinAndMaxTick(minimum_tick, maximum_tick);
   setMinAndMaxAddress(minimum_address, maximum_address);
 }
