@@ -5,6 +5,10 @@
 #include <cmath>
 #include <string>
 
+inline uint64_t int32ToUint64(int32_t value) {
+  return static_cast<uint64_t>(static_cast<uint32_t>(value));
+}
+
 // A simple implementation of an ivec2 and ivec 3 to allow the C++ code
 // to resemble GLSL code more.
 class ivec2 {
@@ -40,7 +44,7 @@ public:
     long double shift32 = static_cast<long double>(0x100000000);
     long double result = y;
     result *= shift32;
-    long double x2 = x;
+    long double x2 = int32ToUint64(x);
     result += x2;
     return result;
   }
@@ -90,14 +94,16 @@ public:
     y = val >> 32;
   }
   uint32_t getUpper32() const { return z; }
+
+  // Convert the 96-bit integer to a long double.
   long double getLongDouble() const {
-    long double shift32 = static_cast<long double>(0x100000000);
-    long double result = z;
+    long double shift32 = static_cast<long double>(0x100000000L);
+    long double result = z; // Intentional keep the sign.
     result *= shift32;
-    long double y2 = y;
+    long double y2 = int32ToUint64(y);
     result += y2;
     result *= shift32;
-    long double x2 = x;
+    long double x2 = int32ToUint64(x);
     result += x2;
     return result;
   };

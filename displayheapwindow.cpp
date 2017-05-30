@@ -96,6 +96,10 @@ void DisplayHeapWindow::zoomToPoint(double dx, double dy, double how_much_x,
   long double epsilon = 0.05;
   long double height = getHeightAsLongDouble();
   long double width = getWidthAsLongDouble();
+  if ((height < 0) || (width < 0)) {
+    printf("[!] Something is going wrong zooming!\n");
+    return;
+  }
   long double target_height = height * how_much_y;
   long double target_width = width * how_much_x;
   if (target_height > maximum_height_.getLongDouble()) {
@@ -189,10 +193,15 @@ bool DisplayHeapWindow::setMinAndMaxTick(ivec2 min_tick, ivec2 max_tick) {
 }
 
 bool DisplayHeapWindow::setMinAndMaxAddress(ivec3 min_address, ivec3 max_address) {
+  ivec3 height = Sub96(max_address, min_address);
+  if (height.isNegative() && (max_address.x != 0)) {
+    printf("[Alert!] Invalid max/min address combination!\n");
+    return false;
+  }
   maximum_address_ = max_address;
   minimum_address_ = min_address;
-  ivec3 height = Sub96(maximum_address_, minimum_address_);
-  if (height.z & 0x8000000000000000L) {
+  height = Sub96(maximum_address_, minimum_address_);
+  if (height.isNegative() && (max_address.x != 0)) {
     printf("[Alert!] Invalid max/min address combination!\n");
     return false;
   }
@@ -262,7 +271,6 @@ long double DisplayHeapWindow::getYScalingHeapToScreen() const {
 }
 
 long double DisplayHeapWindow::getHeightAsLongDouble() const {
-  long double shift32 = static_cast<long double>(0x100000000);
   ivec3 height = Sub96(maximum_address_, minimum_address_);
   return height.getLongDouble();
 }

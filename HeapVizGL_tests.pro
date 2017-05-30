@@ -27,7 +27,9 @@ SOURCES += heapvizwindow.cpp \
     glsl_simulation_functions.cpp \
     gridlayer.cpp \
     heapblockdiagramlayer.cpp \
-    linearbrightnesscolorscale.cpp
+    linearbrightnesscolorscale.cpp \
+    testactiveregioncache.cpp \
+    activeregioncache.cpp
 
 HEADERS  += heapvizwindow.h \
     glheapdiagram.h \
@@ -48,7 +50,9 @@ HEADERS  += heapvizwindow.h \
     heapblockdiagramlayer.h \
     LICENSE_json.h \
     linearbrightnesscolorscale.h \
-    ui_heapvizwindow.h
+    ui_heapvizwindow.h \
+    testactiveregioncache.h \
+    activeregioncache.h
 
 FORMS    += heapvizwindow.ui
 

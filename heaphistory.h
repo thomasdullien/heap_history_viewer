@@ -11,6 +11,7 @@
 
 #include "json.hpp"
 
+#include "activeregioncache.h"
 #include "displayheapwindow.h"
 #include "heapblock.h"
 #include "heapwindow.h"
@@ -138,6 +139,9 @@ private:
 
   // Ranges of addresses to consider. If empty, consider everything.
   std::vector<std::pair<uint64_t, uint64_t>> filter_ranges_;
+
+  // Cache for keeping regions with heap activity at different zoom levels.
+  ActiveRegionCache active_region_cache_;
 
   uint32_t ColorStringToUint32(const std::string &color);
 };

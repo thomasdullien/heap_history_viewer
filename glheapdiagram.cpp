@@ -105,12 +105,12 @@ void GLHeapDiagram::paintGL() {
   // Enable for verbose output of the simulated shaders.
   heap_window.setDebug(false);
 
+  pages_layer_->refreshVertices(heap_history_, true);
   pages_layer_->paintLayer(heap_window.getMinimumTick(),
                            heap_window.getMinimumAddress(),
                            heap_to_screen_matrix_);
 
   block_layer_->refreshVertices(heap_history_, true);
-
   // Draw the contents of the blocks.
   block_layer_->paintLayer(heap_window.getMinimumTick(),
                            heap_window.getMinimumAddress(),
