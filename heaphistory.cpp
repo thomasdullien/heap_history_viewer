@@ -90,39 +90,37 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
   }
   printf("heap_blocks_.size() is %d\n", heap_blocks_.size());
   fflush(stdout);
+
+  // Initialize the internal caches.
+  uint64_t height = global_area_.maximum_address_
+    - global_area_.minimum_address_;
+  active_region_cache_ = ActiveRegionCache(height,
+    &heap_blocks_);
 }
 
-
 // Decide whether a block is worth sending to the graphics card.
-bool HeapHistory::isBlockActive(const HeapBlock &block, uint64_t min_size) const {
+inline bool HeapHistory::isBlockActive(const HeapBlock &block,
+  uint64_t min_size, uint64_t min_address, uint64_t max_address,
+  uint64_t min_tick, uint64_t max_tick) const {
+
   // Is it big enough to be visible on the screen? (at least 1/500th of the screen height).
   if (block.size_ < min_size) {
     return false;
   }
-
-  // Is it located above the current screen?
-  ivec3 max_address = current_window_.getMaximumAddress();
-  ivec3 min_address = current_window_.getMinimumAddress();
-  ivec3 block_lower = Load64BitLeftShiftedBy4Into96Bit(
-    block.address_ & 0xFFFFFFFF,
-    block.address_ >> 32);
-  ivec3 difference = Sub96(block_lower, max_address);
-  if ((difference.z & 0x80000000) == 0) {
+  if (block.address_ > max_address) {
     return false;
   }
-  // Is it located below the current screen?
-  uint64_t block_upper = block.address_ + block.size_;
-  ivec3 block_upper_bound = Load64BitLeftShiftedBy4Into96Bit(
-    block_upper & 0xFFFFFFFF,
-    block_upper >> 32);
-  difference = Sub96(min_address, block_upper_bound);
-
-  if ((difference.z & 0x80000000) == 0) {
-    return true; // TODO(thomasdullien) Why do some blocks vanish wrongly if this is false?
+  if (block.address_ + block.size_ < min_address) {
+    return false;
+  }
+  if (block.end_tick_ < min_tick) {
+    return false;
+  }
+  if (block.start_tick_ > max_tick) {
+    return false;
   }
   return true;
 }
-
 
 void HeapHistory::setCurrentWindow(const HeapWindow &new_window) {
   current_window_.reset(new_window);
@@ -288,59 +286,41 @@ void HeapHistory::addressesToVertices(std::vector<HeapVertex> *vertices) const {
     float red, green, blue;
     colorToFloats(color, &red, &green, &blue);
 
-    vertices->push_back(HeapVertex(0, event.first, QVector3D(red, green, blue)));
-    vertices->push_back(HeapVertex(1, event.first, QVector3D(red, green, blue)));
+    vertices->push_back(
+      HeapVertex(0, event.first, QVector3D(red, green, blue)));
+    vertices->push_back(
+      HeapVertex(1, event.first, QVector3D(red, green, blue)));
   }
 }
 
 void HeapHistory::getActiveRegions(std::map<uint64_t, uint64_t>* regions,
   uint64_t* out_size) const {
+
   // Calculate what the proper size of a "region" should be at the current zoom
   // level. We take 1/100 of the screen height at the moment.
   long double yscaling = current_window_.getYScalingHeapToScreen();
-  long double minimum_size = ((1.0/100.0) / yscaling);
+  long double minimum_size = ((1.0/3.0) / yscaling);
   uint64_t uint_minsize = static_cast<uint64_t>(minimum_size);
-  // Ensure a minimum size of 4096 bytes for the regions to consider.
-  int shift_value = std::min(64 - __builtin_clzl(uint_minsize), 12);
-  uint64_t region_size = static_cast<uint64_t>(1) << shift_value;
-  *out_size = region_size;
-  printf("Active region size is %ld bytes!\n", region_size);
 
-  // Now that we have the size, collect the active regions.
-  std::set<uint64_t> active_regions;
-  for (const HeapBlock& block : heap_blocks_) {
-    for (uint64_t page = block.address_ >> shift_value;
-         page <= (block.address_ + block.size_) >> shift_value;
-         ++page) {
-      active_regions.insert(page);
-    }
-  }
+  printf("YScaling is %Le, XScaling is %Le\n", current_window_.getYScalingHeapToScreen(),
+    current_window_.getXScalingHeapToScreen());
+  fflush(stdout);
 
-  std::map<uint64_t, uint64_t>& address_ranges = *regions;
-  // Iterate over active regions and build address ranges from them.
-  for (std::set<uint64_t>::const_iterator lower = active_regions.begin();
-    lower != active_regions.end(); ++lower) {
-    uint64_t lower_bound = *lower;
-    uint64_t last_value = lower_bound;
-    for (std::set<uint64_t>::const_iterator higher = lower;
-      higher != active_regions.end() && ((*higher-last_value) == 1);
-      ++higher) {
-      last_value = *higher;
-      lower = higher;
-    }
-    address_ranges[lower_bound * region_size] = last_value * region_size;
-    printf("Active range %lx -> %lx\n", lower_bound * region_size,
-      last_value * region_size);
-  }
+  const std::map<uint64_t, uint64_t>* current_regions =
+    active_region_cache_.getActiveRegions(uint_minsize, out_size);
+  *regions = *current_regions;
 }
 
 // Determines all active pages ranges, and then provides rectangles covering the
 // active areas of memory in a light color.
-void HeapHistory::activeRegionsToVertices(std::vector<HeapVertex> *vertices) const {
+void HeapHistory::activeRegionsToVertices(std::vector<HeapVertex> *vertices)
+  const {
   std::map<uint64_t, uint64_t> address_ranges;
   uint64_t region_size;
   // Determine the correct active regions on this zoom level.
   getActiveRegions(&address_ranges, &region_size);
+  printf("Got %d ranges at granularity %lx\n", address_ranges.size(),
+    region_size);
 
   QVector3D color = QVector3D(0.0, 0.7, 0.0);
   uint32_t lower_left_x = 0; // Minimum Tick.
@@ -349,7 +329,7 @@ void HeapHistory::activeRegionsToVertices(std::vector<HeapVertex> *vertices) con
     uint64_t lower_left_y = range.first;
     uint64_t lower_right_y = lower_left_y;
     uint32_t upper_right_x = lower_right_x;
-    uint64_t upper_right_y = range.second + region_size; // Upper end of the last page
+    uint64_t upper_right_y = range.second;
     uint32_t upper_left_x = lower_left_x;
     uint64_t upper_left_y = upper_right_y;
 
@@ -369,29 +349,35 @@ void HeapHistory::HeapBlockToVertices(const HeapBlock &block,
   block.toVertices(current_tick_, vertices);
 }
 
+inline uint64_t HeapHistory::getMinimumBlockSize() const {
+  long double yscaling = current_window_.getYScalingHeapToScreen();
+  long double minimum_size = ((1.0/50.0) / yscaling);
+  uint64_t uint_min_size = uint64_t(minimum_size);
+  return uint_min_size;
+}
+
 // Converts the vector of heap blocks in the current heap history to
 // heap vertices. Filters out elements that are too small to be rendered
 // or fall outside of the current screen.
 size_t HeapHistory::heapBlockVerticesForActiveWindow(
     std::vector<HeapVertex> *vertices) const {
-
-  long double yscaling = current_window_.getYScalingHeapToScreen();
-  long double minimum_size = ((1.0/50.0) / yscaling);
-  uint64_t uint_min_size = uint64_t(minimum_size);
-  printf("[!] Minimum size is %ld\n", uint_min_size);
+  uint64_t uint_min_size = getMinimumBlockSize();
+  uint64_t minimum_address = current_window_.getMinimumAddressUint64();
+  uint64_t maximum_address = current_window_.getMaximumAddressUint64();
+  uint64_t minimum_tick = current_window_.getMinimumTickUint32();
+  uint64_t maximum_tick = current_window_.getMaximumTickUint32();
 
   size_t active_block_count = 0;
   for (std::vector<HeapBlock>::const_iterator iter = heap_blocks_.begin();
        iter != heap_blocks_.end(); ++iter) {
-    if (isBlockActive(*iter, uint_min_size)) {
+    bool active = isBlockActive(*iter, uint_min_size, minimum_address,
+                           maximum_address, minimum_tick, maximum_tick);
+    if (active) {
       HeapBlockToVertices(*iter, vertices);
       ++active_block_count;
-    } else {
-      if (iter->address_ == 0x7FFFF3FD5000UL) {
-        printf("Skipping vanishing block?\n");
-      }
     }
   }
+
   return active_block_count;
 }
 

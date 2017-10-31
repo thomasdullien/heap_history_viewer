@@ -18,6 +18,7 @@ private slots:
   void Test96BitFlipBits();
   void Test96BitSubtraction();
   void Test96BitAddition();
+  void Test96ToAndFromConversion();
   void MapFromHeapToScreenMaximumPositiveSizes();
   void MapFromHeapToScreenBottomLeftWindow();
   void MapFromHeapToScreenTopRightWindow();

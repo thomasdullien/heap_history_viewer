@@ -11,6 +11,7 @@
 
 #include "json.hpp"
 
+#include "activeregioncache.h"
 #include "displayheapwindow.h"
 #include "heapblock.h"
 #include "heapwindow.h"
@@ -70,8 +71,6 @@ public:
   void addressesToVertices(std::vector<HeapVertex> *vertices) const;
   void activeRegionsToVertices(std::vector<HeapVertex> *vertices) const;
 
-
-
   // Functions for moving the currently visible window around.
   void panCurrentWindow(double dx, double dy);
   void zoomToPoint(double dx, double dy, double how_much_x, double how_much_y,
@@ -84,13 +83,18 @@ private:
   void recordFilterRange(uint64_t low, uint64_t high);
 
   bool isEventFiltered(uint64_t address);
-  bool isBlockActive(const HeapBlock &block, uint64_t min_size) const;
+  bool isBlockActive(const HeapBlock &block,
+    uint64_t min_size, uint64_t min_address, uint64_t max_address,
+    uint64_t min_tick, uint64_t max_tick) const;
 
   // Returns coarse-grained intervals of regions of memory that see activity. The size
   // of these regions are byte-powers-of-two depending on the current zoom level, but
   // never less than page size (4k).
   void getActiveRegions(std::map<uint64_t, uint64_t>* regions,
     uint64_t* out_size) const;
+
+  // Return the minimum size a block needs to have to be visible on screen.
+  inline uint64_t getMinimumBlockSize() const;
 
   // Dumps 6 vertices for 2 triangles for a block into the output vector.
   // TODO(thomasdullien): Optimize this to only dump 4 vertices.
@@ -135,6 +139,9 @@ private:
 
   // Ranges of addresses to consider. If empty, consider everything.
   std::vector<std::pair<uint64_t, uint64_t>> filter_ranges_;
+
+  // Cache for keeping regions with heap activity at different zoom levels.
+  ActiveRegionCache active_region_cache_;
 
   uint32_t ColorStringToUint32(const std::string &color);
 };

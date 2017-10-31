@@ -43,8 +43,22 @@ public:
 
   ivec2 getMinimumTick() const { return minimum_tick_; }
   ivec2 getMaximumTick() const { return maximum_tick_; }
+
+  uint32_t getMinimumTickUint32() const {
+    return minimum_tick_.isNegative() ? 0 :
+      minimum_tick_.getUint64() >> 4; }
+  uint32_t getMaximumTickUint32() const {
+    return maximum_tick_.getUint64() >> 4; }
+
   ivec3 getMinimumAddress() const { return minimum_address_; }
   ivec3 getMaximumAddress() const { return maximum_address_; }
+  uint64_t getMinimumAddressUint64() const {
+    return minimum_address_.isNegative() ? 0 :
+      Convert96BitTo64BitRightShift(minimum_address_);
+  }
+  uint64_t getMaximumAddressUint64() const {
+    return Convert96BitTo64BitRightShift(maximum_address_);
+  }
 
   long double getXScalingHeapToScreen() const;
   long double getYScalingHeapToScreen() const;
@@ -62,6 +76,11 @@ public:
   void debugDumpHeapVertex(const HeapVertex& vertex) const;
   void debugDumpHeapVerticesToAddressMapper(
     const std::vector<HeapVertex>* vertices) const;
+
+  //void registerLayer(GLHeapDiagramLayer* layer) {
+  //  registered_layers_.push_back(layer); }
+  //void refreshLayers() {
+  //}
 
 private:
   // The internal version of the above mapping function. The code should be
@@ -82,6 +101,8 @@ private:
 
   ivec2 maximum_width_;
   ivec3 maximum_height_;
+
+  //std::vector<GLHeapDiagramLayer*> registered_layers_;
 
   mutable bool debug_mode_;
 };

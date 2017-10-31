@@ -5,6 +5,10 @@
 #include <cmath>
 #include <string>
 
+inline uint64_t int32ToUint64(int32_t value) {
+  return static_cast<uint64_t>(static_cast<uint32_t>(value));
+}
+
 // A simple implementation of an ivec2 and ivec 3 to allow the C++ code
 // to resemble GLSL code more.
 class ivec2 {
@@ -17,7 +21,7 @@ public:
     x = a;
     y = b;
   }
-  bool isNegative() {
+  bool isNegative() const {
     return (y & 0x80000000) != 0;
   }
   void setUint64(uint64_t a) {
@@ -40,7 +44,7 @@ public:
     long double shift32 = static_cast<long double>(0x100000000);
     long double result = y;
     result *= shift32;
-    long double x2 = x;
+    long double x2 = int32ToUint64(x);
     result += x2;
     return result;
   }
@@ -76,6 +80,10 @@ public:
     z = c;
   }
 
+  bool isNegative() const {
+    return (z & 0x80000000) != 0;
+  }
+
   uint64_t getLowUint64() const {
     uint64_t temp = static_cast<uint64_t>(static_cast<uint32_t>(y)) << 32;
     temp |= static_cast<uint32_t>(x);
@@ -86,14 +94,16 @@ public:
     y = val >> 32;
   }
   uint32_t getUpper32() const { return z; }
+
+  // Convert the 96-bit integer to a long double.
   long double getLongDouble() const {
-    long double shift32 = static_cast<long double>(0x100000000);
-    long double result = z;
+    long double shift32 = static_cast<long double>(0x100000000L);
+    long double result = z; // Intentional keep the sign.
     result *= shift32;
-    long double y2 = fabs(y);
+    long double y2 = int32ToUint64(y);
     result += y2;
     result *= shift32;
-    long double x2 = fabs(x);
+    long double x2 = int32ToUint64(x);
     result += x2;
     return result;
   };
@@ -159,6 +169,7 @@ ivec3 Load64BitLeftShiftedBy4Into96Bit(int low, int high);
 ivec2 Load32BitLeftShiftedBy4Into64Bit(int low);
 
 // Functions that are not necessarily needed in GLSL.
+uint64_t Convert96BitTo64BitRightShift(ivec3 input);
 ivec2 LongDoubleTo64Bits(long double value);
 ivec3 LongDoubleTo96Bits(long double value);
 const std::string ivec3ToHex(const ivec3& iv3);

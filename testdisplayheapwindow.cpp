@@ -4,6 +4,7 @@
 #include "glsl_simulation_functions.h"
 #include "heapwindow.h"
 #include "testdisplayheapwindow.h"
+#include "testactiveregioncache.h"
 
 void TestDisplayHeapWindow::TestLongDoubleTo96Bits() {
   long double test(2);
@@ -16,6 +17,14 @@ void TestDisplayHeapWindow::TestLongDoubleTo96Bits() {
   QCOMPARE(result.x, 0);
   QCOMPARE(result.y, 1);
   QCOMPARE(result.z, 0);
+}
+
+void TestDisplayHeapWindow::Test96ToAndFromConversion() {
+  uint64_t testvalue = 0xFEDCBA9876543210;
+  ivec3 vec = Load64BitLeftShiftedBy4Into96Bit(
+    testvalue & 0xFFFFFFFF, testvalue >> 32);
+  uint64_t result = Convert96BitTo64BitRightShift(vec);
+  QCOMPARE(result, testvalue);
 }
 
 void TestDisplayHeapWindow::Test96BitFlipBits() {
@@ -47,6 +56,9 @@ void TestDisplayHeapWindow::Test96BitSubtraction() {
 
   QCOMPARE(static_cast<uint32_t>(result.x), 0x1FF91EAFU);
   QCOMPARE(static_cast<uint32_t>(result.y), 0U);
+
+  //ivec3 subtrahend3(0xe5e0fe38, 0, 0);
+  //ivec3 value
 }
 
 void TestDisplayHeapWindow::Test96BitAddition() {
@@ -177,5 +189,23 @@ void TestDisplayHeapWindow::MapFromHeapToScreenTopRightWindow() {
   QCOMPARE(result3.second, -1.0);
 }
 
-QTEST_MAIN(TestDisplayHeapWindow)
+//QTEST_MAIN(TestDisplayHeapWindow)
+
+
+int main(int argc, char** argv)
+{
+   int status = 0;
+   auto ASSERT_TEST = [&status, argc, argv](QObject* obj) {
+     status |= QTest::qExec(obj, argc, argv);
+     delete obj;
+   };
+
+   printf("WHo?\n");
+   ASSERT_TEST(new TestActiveRegionCache());
+   printf("What??\n");
+   ASSERT_TEST(new TestDisplayHeapWindow());
+   return status;
+}
+
+
 //#include "testdisplayheapwindow.moc"
