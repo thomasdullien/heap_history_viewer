@@ -90,10 +90,10 @@ public:
     long double shift32 = static_cast<long double>(0x100000000);
     long double result = z;
     result *= shift32;
-    long double y2 = y;
+    long double y2 = fabs(y);
     result += y2;
     result *= shift32;
-    long double x2 = x;
+    long double x2 = fabs(x);
     result += x2;
     return result;
   };
