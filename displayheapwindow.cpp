@@ -271,12 +271,6 @@ long double DisplayHeapWindow::getYScalingHeapToScreen() const {
 }
 
 long double DisplayHeapWindow::getHeightAsLongDouble() const {
-<<<<<<< HEAD
-  long double shift32 = static_cast<long double>(0x100000000);
-  printf("maxium_address_ is %08.08lx %08.08lx %08.08lx\n", maximum_address_.x, maximum_address_.y, maximum_address_.z);
-  printf("minimum_address_ is %08.08lx %08.08lx %08.08lx\n", minimum_address_.x, minimum_address_.y, minimum_address_.z);
-=======
->>>>>>> 1cb1ee12e169c59da729f01bd96bd31ff5c37a18
   ivec3 height = Sub96(maximum_address_, minimum_address_);
   return height.getLongDouble();
 }

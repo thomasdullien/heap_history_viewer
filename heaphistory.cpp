@@ -351,7 +351,7 @@ void HeapHistory::HeapBlockToVertices(const HeapBlock &block,
 
 inline uint64_t HeapHistory::getMinimumBlockSize() const {
   long double yscaling = current_window_.getYScalingHeapToScreen();
-  long double minimum_size = ((1.0/50.0) / yscaling);
+  long double minimum_size = ((1.0/1000.0) / yscaling);
   uint64_t uint_min_size = uint64_t(minimum_size);
   return uint_min_size;
 }
