@@ -34,8 +34,10 @@ void GLHeapDiagramLayer::refreshGLBuffer(bool bind) {
   if (layer_vertex_buffer_.size() < (layer_vertices_.size() * sizeof(HeapVertex))) {
     layer_vertex_buffer_.allocate(layer_vertices_.size() * sizeof(HeapVertex));
   }
-  layer_vertex_buffer_.write(0, &layer_vertices_[0],
-    layer_vertices_.size() * sizeof(HeapVertex));
+  if(layer_vertices_.size() > 0) {
+      layer_vertex_buffer_.write(0, &layer_vertices_[0],
+        layer_vertices_.size() * sizeof(HeapVertex));
+  }
   if (bind) {
     layer_vertex_buffer_.release();
   }
