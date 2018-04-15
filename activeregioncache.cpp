@@ -59,7 +59,9 @@ void ActiveRegionCache::coalesceCache(uint64_t cache_index) {
     uint64_t forward_index = 1;
     auto forward_iter = iter;
     ++forward_iter;
-    while (forward_iter->first == current_address + (forward_index * region_size)) {
+    while (forward_iter != cache.end() &&
+           forward_iter->first == current_address + (
+           forward_index * region_size)) {
       keys_to_remove.push_back(forward_iter->first);
       ++forward_iter;
       ++forward_index;
