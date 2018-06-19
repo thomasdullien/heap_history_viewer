@@ -4,10 +4,11 @@ HeapBlockDiagramLayer::HeapBlockDiagramLayer() :
   GLHeapDiagramLayer(":/simple.vert", ":/simple.frag", false) {
 }
 
-void HeapBlockDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history) {
+void HeapBlockDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history, bool all) {
   std::vector<HeapVertex> *vertices = getVertexVector();
   vertices->clear();
-  history.heapBlockVerticesForActiveWindow(vertices);
+
+  history.heapBlockVerticesForActiveWindow(vertices, all);
 }
 
 std::pair<vec4, vec4> HeapBlockDiagramLayer::vertexShaderSimulator(const HeapVertex& vertex) {

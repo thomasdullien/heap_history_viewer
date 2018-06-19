@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include <QApplication>
 #include <QFileDialog>
@@ -48,6 +49,7 @@ void GLHeapDiagram::loadFileInternal() {
 
     // Initialize the active pages layer.
     pages_layer_->initializeGLStructures(heap_history_, this);
+
   }
 }
 
@@ -67,6 +69,13 @@ QSize GLHeapDiagram::minimumSizeHint() { return QSize(500, 500); }
 void GLHeapDiagram::setFileToDisplay(QString filename) {
   file_to_load_ = filename.toStdString();
   loadFileInternal();
+}
+
+void GLHeapDiagram::setSizeToHighlight(uint32_t size) {
+  size_to_highlight_ = size;
+  heap_history_.highlightBySize(size);
+  refresh_all_vertices_ = true;
+  update();
 }
 
 QSize GLHeapDiagram::sizeHint() { return QSize(1024, 1024); }
@@ -105,12 +114,12 @@ void GLHeapDiagram::paintGL() {
   // Enable for verbose output of the simulated shaders.
   heap_window.setDebug(false);
 
-  pages_layer_->refreshVertices(heap_history_, true);
+  pages_layer_->refreshVertices(heap_history_, true, refresh_all_vertices_);
   pages_layer_->paintLayer(heap_window.getMinimumTick(),
                            heap_window.getMinimumAddress(),
                            heap_to_screen_matrix_);
 
-  block_layer_->refreshVertices(heap_history_, true);
+  block_layer_->refreshVertices(heap_history_, true, refresh_all_vertices_);
   // Draw the contents of the blocks.
   block_layer_->paintLayer(heap_window.getMinimumTick(),
                            heap_window.getMinimumAddress(),
@@ -124,6 +133,7 @@ void GLHeapDiagram::paintGL() {
   address_layer_->paintLayer(heap_window.getMinimumTick(),
                              heap_window.getMinimumAddress(),
                              heap_to_screen_matrix_);
+  refresh_all_vertices_ = false;
 }
 
 void GLHeapDiagram::update() {

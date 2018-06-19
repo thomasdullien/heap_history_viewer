@@ -1,6 +1,11 @@
 #include "heapvizwindow.h"
 #include "ui_heapvizwindow.h"
+#include <QFileDialog>
+#include <QInputDialog>
 #include <QStatusBar>
+
+#include <istream>
+#include <fstream>
 
 HeapVizWindow::HeapVizWindow(const std::string* inputfile,
                              QWidget *parent)
@@ -9,9 +14,20 @@ HeapVizWindow::HeapVizWindow(const std::string* inputfile,
 
   statusBar()->showMessage("Initialized Main Window");
 
-  if (inputfile != nullptr) {
-    emit setFileToDisplay(QString(inputfile->c_str()));
-  }
+  bool can_file_be_opened = false;
+  // Check if the input file can be opened.
+  QString input_filename = QString::fromStdString(*inputfile);
+  do {
+    std::ifstream ifs(input_filename.toUtf8().constData(), std::fstream::in);
+    if (ifs.fail()) {
+      input_filename = QFileDialog::getOpenFileName(this, tr("Open Heap Log JSON"), "",
+        tr("JSON Files (*.json)"));
+    } else {
+      can_file_be_opened = true;
+    }
+  } while (can_file_be_opened);
+
+  emit setFileToDisplay(input_filename);
 }
 
 void HeapVizWindow::update() { printf("Update called"); }
@@ -33,4 +49,12 @@ void HeapVizWindow::blockClicked(bool b, HeapBlock block) {
 void HeapVizWindow::showMessage(std::string message) {
   QString message_to_show(message.c_str());
   statusBar()->showMessage(message_to_show);
+}
+
+void HeapVizWindow::on_actionHighlight_blocks_with_size_triggered()
+{
+  int size = QInputDialog::getInt(this, tr("Specify the size to highlight"),
+    tr("Block size"), 256);
+
+  emit setSizeToHighlight(size);
 }

@@ -34,6 +34,7 @@ signals:
 
 public slots:
   void setFileToDisplay(QString filename);
+  void setSizeToHighlight(uint32_t size);
 
 protected slots:
   void update();
@@ -69,6 +70,10 @@ private:
   void setTickBaseUniforms();
 
   std::string file_to_load_;
+
+  // Blocks of this size will be highlighted.
+  uint32_t size_to_highlight_ = 0;
+  bool refresh_all_vertices_ = false;
 
   // Gets set to true after the initializeGL() method runs.
   bool is_GL_initialized_;

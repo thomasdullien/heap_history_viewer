@@ -8,19 +8,21 @@ HeapBlock::HeapBlock() {}
 HeapBlock::HeapBlock(uint32_t start_tick, uint32_t size, uint64_t address,
                      const std::string *alloctag = nullptr)
     : start_tick_(start_tick), end_tick_(std::numeric_limits<uint32_t>::max()),
-      size_(size), address_(address), allocation_tag_(alloctag),
+      size_(size), address_(address), highlighted_(false), allocation_tag_(alloctag),
       free_tag_(nullptr) {}
 
 HeapBlock::HeapBlock(uint32_t start_tick, uint32_t end_tick, uint32_t size,
                      uint64_t address)
     : start_tick_(start_tick), end_tick_(end_tick), size_(size),
-      address_(address) {}
+      address_(address), highlighted_(false) {}
 
 void HeapBlock::toVertices(uint32_t max_tick, std::vector<HeapVertex> *vertices,
                            bool debug) const {
+
   std::pair<QVector3D, QVector3D> colors =
-      LinearBrightnessColorScale::colorsFromTick(start_tick_, end_tick_,
-                                                 max_tick);
+    highlighted_ ?
+    LinearBrightnessColorScale::highlightedColorsFromTick(start_tick_, end_tick_, max_tick)
+    : LinearBrightnessColorScale::colorsFromTick(start_tick_, end_tick_, max_tick);
 
   uint32_t lower_left_x = start_tick_;
   uint64_t lower_left_y = address_;

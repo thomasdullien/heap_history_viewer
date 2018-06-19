@@ -4,7 +4,7 @@ EventDiagramLayer::EventDiagramLayer() :
   GLHeapDiagramLayer(":/event_shader.vert", ":/simple.frag", true) {
 }
 
-void EventDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history) {
+void EventDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history, bool all) {
   std::vector<HeapVertex> *vertices = getVertexVector();
   vertices->clear();
   history.eventsToVertices(vertices);

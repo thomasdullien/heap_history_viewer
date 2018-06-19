@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>789</width>
-    <height>801</height>
+    <width>1070</width>
+    <height>418</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,16 +29,14 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>789</width>
-     <height>28</height>
+     <width>1070</width>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuHeapViz_GL">
     <property name="title">
      <string>HeapViz GL</string>
     </property>
-    <addaction name="actionOpen_File"/>
-    <addaction name="actionReload_File"/>
    </widget>
    <widget class="QMenu" name="menuTest">
     <property name="title">
@@ -69,19 +67,9 @@
     <bool>false</bool>
    </attribute>
   </widget>
-  <action name="actionOpen_File">
-   <property name="text">
-    <string>Load File</string>
-   </property>
-  </action>
   <action name="actionHighlight_blocks_with_size">
    <property name="text">
     <string>Highlight blocks in size range</string>
-   </property>
-  </action>
-  <action name="actionReload_File">
-   <property name="text">
-    <string>Reload File</string>
    </property>
   </action>
  </widget>
@@ -99,6 +87,7 @@
     <slot>setYRotation()</slot>
     <slot>setXRotation()</slot>
     <slot>setFileToDisplay(QString)</slot>
+    <slot>setSizeToHighlight(uint32_t)</slot>
    </slots>
   </customwidget>
  </customwidgets>
@@ -115,7 +104,7 @@
      <y>73</y>
     </hint>
     <hint type="destinationlabel">
-     <x>-72</x>
+     <x>0</x>
      <y>63</y>
     </hint>
    </hints>
@@ -131,7 +120,7 @@
      <y>218</y>
     </hint>
     <hint type="destinationlabel">
-     <x>-5</x>
+     <x>0</x>
      <y>176</y>
     </hint>
    </hints>
@@ -148,13 +137,30 @@
     </hint>
     <hint type="destinationlabel">
      <x>394</x>
-     <y>408</y>
+     <y>373</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>HeapVizWindow</sender>
+   <signal>setSizeToHighlight(uint32_t)</signal>
+   <receiver>heap_diagram</receiver>
+   <slot>setSizeToHighlight(uint32_t)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1</x>
+     <y>362</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>12</x>
+     <y>364</y>
     </hint>
    </hints>
   </connection>
  </connections>
  <slots>
   <signal>setFileToDisplay(QString)</signal>
+  <signal>setSizeToHighlight(uint32_t)</signal>
   <slot>blockClicked(bool,HeapBlock)</slot>
   <slot>showMessage(std::string)</slot>
  </slots>

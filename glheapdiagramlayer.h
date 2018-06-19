@@ -34,13 +34,13 @@ public:
   virtual std::pair<vec4, vec4> vertexShaderSimulator(const HeapVertex&
     vertex) = 0;
 
-  void refreshVertices(const HeapHistory& heap_history, bool bind);
+  void refreshVertices(const HeapHistory& heap_history, bool bind, bool all = false);
 
   void debugDumpVertexTransformation();
   void setDebug(bool value) { dump_debug_ = value; }
 protected:
   void setupStandardUniforms();
-  virtual void loadVerticesFromHeapHistory(const HeapHistory& history) = 0;
+  virtual void loadVerticesFromHeapHistory(const HeapHistory& history, bool all = false) = 0;
   void refreshGLBuffer(bool bind);
 
   // Helper functions to set the uniforms for the shaders.

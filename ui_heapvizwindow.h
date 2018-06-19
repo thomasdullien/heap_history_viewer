@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'heapvizwindow.ui'
 **
-** Created by: Qt User Interface Compiler version 5.2.1
+** Created by: Qt User Interface Compiler version 5.7.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
@@ -28,9 +28,7 @@ QT_BEGIN_NAMESPACE
 class Ui_HeapVizWindow
 {
 public:
-    QAction *actionOpen_File;
     QAction *actionHighlight_blocks_with_size;
-    QAction *actionReload_File;
     QWidget *centralWidget;
     QGridLayout *gridLayout;
     GLHeapDiagram *heap_diagram;
@@ -45,13 +43,9 @@ public:
     {
         if (HeapVizWindow->objectName().isEmpty())
             HeapVizWindow->setObjectName(QStringLiteral("HeapVizWindow"));
-        HeapVizWindow->resize(789, 801);
-        actionOpen_File = new QAction(HeapVizWindow);
-        actionOpen_File->setObjectName(QStringLiteral("actionOpen_File"));
+        HeapVizWindow->resize(1070, 418);
         actionHighlight_blocks_with_size = new QAction(HeapVizWindow);
         actionHighlight_blocks_with_size->setObjectName(QStringLiteral("actionHighlight_blocks_with_size"));
-        actionReload_File = new QAction(HeapVizWindow);
-        actionReload_File->setObjectName(QStringLiteral("actionReload_File"));
         centralWidget = new QWidget(HeapVizWindow);
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
         gridLayout = new QGridLayout(centralWidget);
@@ -67,7 +61,7 @@ public:
         HeapVizWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(HeapVizWindow);
         menuBar->setObjectName(QStringLiteral("menuBar"));
-        menuBar->setGeometry(QRect(0, 0, 789, 28));
+        menuBar->setGeometry(QRect(0, 0, 1070, 20));
         menuHeapViz_GL = new QMenu(menuBar);
         menuHeapViz_GL->setObjectName(QStringLiteral("menuHeapViz_GL"));
         menuTest = new QMenu(menuBar);
@@ -85,27 +79,24 @@ public:
 
         menuBar->addAction(menuHeapViz_GL->menuAction());
         menuBar->addAction(menuTest->menuAction());
-        menuHeapViz_GL->addAction(actionOpen_File);
-        menuHeapViz_GL->addAction(actionReload_File);
         menuTest->addAction(actionHighlight_blocks_with_size);
 
         retranslateUi(HeapVizWindow);
         QObject::connect(heap_diagram, SIGNAL(blockClicked(bool,HeapBlock)), HeapVizWindow, SLOT(blockClicked(bool,HeapBlock)));
         QObject::connect(heap_diagram, SIGNAL(showMessage(std::string)), HeapVizWindow, SLOT(showMessage(std::string)));
         QObject::connect(HeapVizWindow, SIGNAL(setFileToDisplay(QString)), heap_diagram, SLOT(setFileToDisplay(QString)));
+        QObject::connect(HeapVizWindow, SIGNAL(setSizeToHighlight(uint32_t)), heap_diagram, SLOT(setSizeToHighlight(uint32_t)));
 
         QMetaObject::connectSlotsByName(HeapVizWindow);
     } // setupUi
 
     void retranslateUi(QMainWindow *HeapVizWindow)
     {
-        HeapVizWindow->setWindowTitle(QApplication::translate("HeapVizWindow", "HeapVizWindow", 0));
-        actionOpen_File->setText(QApplication::translate("HeapVizWindow", "Load File", 0));
-        actionHighlight_blocks_with_size->setText(QApplication::translate("HeapVizWindow", "Highlight blocks in size range", 0));
-        actionReload_File->setText(QApplication::translate("HeapVizWindow", "Reload File", 0));
-        menuHeapViz_GL->setTitle(QApplication::translate("HeapVizWindow", "HeapViz GL", 0));
-        menuTest->setTitle(QApplication::translate("HeapVizWindow", "Edit", 0));
-        toolBar->setWindowTitle(QApplication::translate("HeapVizWindow", "toolBar", 0));
+        HeapVizWindow->setWindowTitle(QApplication::translate("HeapVizWindow", "HeapVizWindow", Q_NULLPTR));
+        actionHighlight_blocks_with_size->setText(QApplication::translate("HeapVizWindow", "Highlight blocks in size range", Q_NULLPTR));
+        menuHeapViz_GL->setTitle(QApplication::translate("HeapVizWindow", "HeapViz GL", Q_NULLPTR));
+        menuTest->setTitle(QApplication::translate("HeapVizWindow", "Edit", Q_NULLPTR));
+        toolBar->setWindowTitle(QApplication::translate("HeapVizWindow", "toolBar", Q_NULLPTR));
     } // retranslateUi
 
 };

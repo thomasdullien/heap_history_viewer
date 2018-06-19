@@ -7,7 +7,7 @@ class EventDiagramLayer : public GLHeapDiagramLayer
 public:
   EventDiagramLayer();
   std::pair<vec4, vec4> vertexShaderSimulator(const HeapVertex& vertex);
-  void loadVerticesFromHeapHistory(const HeapHistory& history);
+  void loadVerticesFromHeapHistory(const HeapHistory& history, bool all);
 };
 
 #endif // EVENTDIAGRAMLAYER_H

@@ -66,7 +66,7 @@ public:
   uint32_t getMaximumTick() const { return global_area_.maximum_tick_; }
 
   // Dump out triangles for the current window of heap events.
-  size_t heapBlockVerticesForActiveWindow(std::vector<HeapVertex> *vertices) const;
+  size_t heapBlockVerticesForActiveWindow(std::vector<HeapVertex> *vertices, bool all=false) const;
   void eventsToVertices(std::vector<HeapVertex> *vertices) const;
   void addressesToVertices(std::vector<HeapVertex> *vertices) const;
   void activeRegionsToVertices(std::vector<HeapVertex> *vertices) const;
@@ -76,6 +76,8 @@ public:
   void zoomToPoint(double dx, double dy, double how_much_x, double how_much_y,
     long double max_height, long double max_width);
 
+  // Functions for highlighting blocks.
+  void highlightBySize(uint32_t highlight_size);
 private:
   void recordMallocConflict(uint64_t address, size_t size, uint8_t heap_id);
   void recordFreeConflict(uint64_t address, uint8_t heap_id);

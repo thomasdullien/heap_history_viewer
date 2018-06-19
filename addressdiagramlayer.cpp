@@ -5,7 +5,7 @@ AddressDiagramLayer::AddressDiagramLayer() :
   GLHeapDiagramLayer(":/address_shader.vert", ":/simple.frag", true) {
 }
 
-void AddressDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history) {
+void AddressDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history, bool all) {
   std::vector<HeapVertex> *vertices = getVertexVector();
   vertices->clear();
   history.addressesToVertices(vertices);

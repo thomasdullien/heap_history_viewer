@@ -41,8 +41,8 @@ void GLHeapDiagramLayer::refreshGLBuffer(bool bind) {
   }
 }
 
-void GLHeapDiagramLayer::refreshVertices(const HeapHistory& heap_history, bool bind) {
-  loadVerticesFromHeapHistory(heap_history);
+void GLHeapDiagramLayer::refreshVertices(const HeapHistory& heap_history, bool bind, bool all) {
+  loadVerticesFromHeapHistory(heap_history, all);
   refreshGLBuffer(bind);
 }
 
@@ -50,45 +50,48 @@ void GLHeapDiagramLayer::refreshVertices(const HeapHistory& heap_history, bool b
 // create a vertex etc.
 void GLHeapDiagramLayer::initializeGLStructures(
   const HeapHistory& heap_history, QOpenGLFunctions *parent) {
-  // Load the shaders.
-  layer_shader_program_->addShaderFromSourceFile(QOpenGLShader::Vertex,
+  if (!is_initialized_) {
+    // Load the shaders.
+    layer_shader_program_->addShaderFromSourceFile(QOpenGLShader::Vertex,
                                                  vertex_shader_name_.c_str());
-  layer_shader_program_->addShaderFromSourceFile(QOpenGLShader::Fragment,
+    layer_shader_program_->addShaderFromSourceFile(QOpenGLShader::Fragment,
                                                  fragment_shader_name_.c_str());
-  layer_shader_program_->link();
-  layer_shader_program_->bind();
+    layer_shader_program_->link();
+    layer_shader_program_->bind();
 
-  // Create the heap block vertex buffer.
-  layer_vertex_buffer_.create();
-  layer_vertex_buffer_.bind();
-  layer_vertex_buffer_.setUsagePattern(QOpenGLBuffer::DynamicDraw);
+    // Create the heap block vertex buffer.
+    layer_vertex_buffer_.create();
+    layer_vertex_buffer_.bind();
+    layer_vertex_buffer_.setUsagePattern(QOpenGLBuffer::DynamicDraw);
+  }
 
   refreshVertices(heap_history, false);
 
-  setupStandardUniforms();
+  if (!is_initialized_) {
+    setupStandardUniforms();
 
-  // Create the vertex array object.
-  layer_vao_.create();
-  layer_vao_.bind();
+    // Create the vertex array object.
+    layer_vao_.create();
+    layer_vao_.bind();
 
-  // Register attribute arrays with stride for the vertex attributes.
-  layer_shader_program_->enableAttributeArray(0);
-  layer_shader_program_->enableAttributeArray(1);
-  layer_shader_program_->setAttributeBuffer(
-      0, GL_FLOAT, HeapVertex::positionOffset(), HeapVertex::PositionTupleSize,
-      HeapVertex::stride());
-  layer_shader_program_->setAttributeBuffer(
-      1, GL_FLOAT, HeapVertex::colorOffset(), HeapVertex::ColorTupleSize,
-      HeapVertex::stride());
-  parent->glBindAttribLocation(layer_shader_program_->programId(), 0,
-                               "position");
-  parent->glBindAttribLocation(layer_shader_program_->programId(), 1, "color");
+    // Register attribute arrays with stride for the vertex attributes.
+    layer_shader_program_->enableAttributeArray(0);
+    layer_shader_program_->enableAttributeArray(1);
+    layer_shader_program_->setAttributeBuffer(
+        0, GL_FLOAT, HeapVertex::positionOffset(), HeapVertex::PositionTupleSize,
+        HeapVertex::stride());
+    layer_shader_program_->setAttributeBuffer(
+        1, GL_FLOAT, HeapVertex::colorOffset(), HeapVertex::ColorTupleSize,
+        HeapVertex::stride());
+    parent->glBindAttribLocation(layer_shader_program_->programId(), 0,
+                                 "position");
+    parent->glBindAttribLocation(layer_shader_program_->programId(), 1, "color");
 
-  // Unbind.
-  layer_vao_.release();
-  layer_vertex_buffer_.release();
-  layer_shader_program_->release();
-
+    // Unbind.
+    layer_vao_.release();
+    layer_vertex_buffer_.release();
+    layer_shader_program_->release();
+  }
   is_initialized_ = true;
 }
 

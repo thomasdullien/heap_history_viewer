@@ -356,11 +356,20 @@ inline uint64_t HeapHistory::getMinimumBlockSize() const {
   return uint_min_size;
 }
 
+void HeapHistory::highlightBySize(uint32_t highlight_size) {
+  for (HeapBlock& block : heap_blocks_) {
+    block.highlighted_ = false;
+    if (block.size_ == highlight_size) {
+      block.highlighted_ = true;
+    }
+  }
+}
+
 // Converts the vector of heap blocks in the current heap history to
 // heap vertices. Filters out elements that are too small to be rendered
-// or fall outside of the current screen.
+// or fall outside of the current screen, unless all is "true".
 size_t HeapHistory::heapBlockVerticesForActiveWindow(
-    std::vector<HeapVertex> *vertices) const {
+    std::vector<HeapVertex> *vertices, bool all) const {
   uint64_t uint_min_size = getMinimumBlockSize();
   uint64_t minimum_address = current_window_.getMinimumAddressUint64();
   uint64_t maximum_address = current_window_.getMaximumAddressUint64();
@@ -371,7 +380,8 @@ size_t HeapHistory::heapBlockVerticesForActiveWindow(
   for (std::vector<HeapBlock>::const_iterator iter = heap_blocks_.begin();
        iter != heap_blocks_.end(); ++iter) {
     bool active = isBlockActive(*iter, uint_min_size, minimum_address,
-                           maximum_address, minimum_tick, maximum_tick);
+      maximum_address, minimum_tick, maximum_tick) || all;
+
     if (active) {
       HeapBlockToVertices(*iter, vertices);
       ++active_block_count;
@@ -390,9 +400,9 @@ bool HeapHistory::getEventAtTick(uint32_t tick, std::string *eventstring) {
     uint32_t minimum = std::numeric_limits<uint32_t>::max();
 
     while ((iterator_approx != tick_to_event_strings_.end() &&
-           (abs(iterator_approx->first - tick) < 300))) {
-      if (abs(iterator_approx->first - tick) <= minimum) {
-        minimum = abs(iterator_approx->first - tick);
+           (abs(static_cast<int32_t>(iterator_approx->first - tick)) < 300))) {
+      if (abs(static_cast<int32_t>(iterator_approx->first - tick)) <= minimum) {
+        minimum = abs(static_cast<int32_t>(iterator_approx->first - tick));
         *eventstring = iterator_approx->second.second;
       }
       ++iterator_approx;

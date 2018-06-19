@@ -24,6 +24,7 @@ protected:
 
 signals:
   void setFileToDisplay(QString filename);
+  void setSizeToHighlight(uint32_t size);
 
 public slots:
   void blockClicked(bool, HeapBlock);
@@ -33,6 +34,7 @@ protected slots:
   void update();
 
 private slots:
+  void on_actionHighlight_blocks_with_size_triggered();
 
 private :
   Ui::HeapVizWindow *ui;

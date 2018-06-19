@@ -26,7 +26,6 @@ public:
                   bool debug = false) const;
   // Check if a given point is inside the current block.
   bool contains(uint32_t tick, uint64_t address) {
-
     return (tick >= start_tick_) && (tick <= end_tick_) &&
            (address >= address_) && (address <= address_ + size_);
   }
@@ -36,6 +35,7 @@ public:
   uint32_t end_tick_;
   uint32_t size_;
   uint64_t address_;
+  bool highlighted_;
   const std::string* allocation_tag_;
   const std::string* free_tag_;
 };
