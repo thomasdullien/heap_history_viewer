@@ -17,8 +17,8 @@ GLHeapDiagramLayer::GLHeapDiagramLayer(
     const std::string &fragment_shader_name, bool is_line_layer)
     : vertex_shader_name_(vertex_shader_name),
       fragment_shader_name_(fragment_shader_name),
-      layer_shader_program_(new QOpenGLShaderProgram()),
-      is_line_layer_(is_line_layer) {}
+      is_line_layer_(is_line_layer),
+      layer_shader_program_(new QOpenGLShaderProgram()) {}
 
 GLHeapDiagramLayer::~GLHeapDiagramLayer() {
   if (is_initialized_) {

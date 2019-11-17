@@ -20,6 +20,13 @@ find_package(Qt5Test REQUIRED)
 set(OpenGL_GL_PREFERENCE "GLVND")
 find_package(OpenGL REQUIRED)
 
+# TODO: Fix all of these
+set(TEMPORARILY_DISABLED_WARNINGS
+        -Wno-unused-variable
+        -Wno-unused-parameter
+        -Wno-unused-but-set-variable
+        -Wno-sign-compare)
+
 add_executable(HeapVizGL
         heapvizwindow.ui
         resource.qrc
@@ -46,6 +53,12 @@ target_link_libraries(HeapVizGL
         ${CONAN_LIBS}
         OpenGL::GL
         Qt5::Widgets)
+
+target_compile_options(HeapVizGL PRIVATE
+        -Werror
+        -Wall
+        -Wextra
+        ${TEMPORARILY_DISABLED_WARNINGS})
 
 add_executable(HeapVizGLTest
         heapvizwindow.ui
@@ -74,3 +87,9 @@ target_link_libraries(HeapVizGLTest
         OpenGL::GL
         Qt5::Test
         Qt5::Widgets)
+
+target_compile_options(HeapVizGLTest PRIVATE
+        -Werror
+        -Wall
+        -Wextra
+        ${TEMPORARILY_DISABLED_WARNINGS})
