@@ -88,7 +88,7 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
 
     fflush(stdout);
   }
-  printf("heap_blocks_.size() is %d\n", heap_blocks_.size());
+  printf("heap_blocks_.size() is %zu\n", heap_blocks_.size());
   fflush(stdout);
 
   // Initialize the internal caches.
@@ -319,7 +319,7 @@ void HeapHistory::activeRegionsToVertices(std::vector<HeapVertex> *vertices)
   uint64_t region_size;
   // Determine the correct active regions on this zoom level.
   getActiveRegions(&address_ranges, &region_size);
-  printf("Got %d ranges at granularity %lx\n", address_ranges.size(),
+  printf("Got %lu ranges at granularity %lx\n", address_ranges.size(),
     region_size);
 
   QVector3D color = QVector3D(0.0, 0.7, 0.0);

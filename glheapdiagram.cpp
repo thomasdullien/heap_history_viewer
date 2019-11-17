@@ -166,11 +166,11 @@ void GLHeapDiagram::mousePressEvent(QMouseEvent *event) {
     std::string eventstring;
     if (heap_history_.getEventAtTick(tick, &eventstring)) {
       char buf[1024];
-      sprintf(buf, "Event at tick %08.08lx: ", tick);
+      sprintf(buf, "Event at tick %8.8x: ", tick);
       emit showMessage(std::string(buf) + eventstring);
     } else {
       char buf[1024];
-      sprintf(buf, "Nothing here at tick %08.08lx and address %016.16lx", tick,
+      sprintf(buf, "Nothing here at tick %8.8x and address %16.16lx", tick,
               address);
       emit showMessage(std::string(buf));
     }
