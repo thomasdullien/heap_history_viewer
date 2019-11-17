@@ -14,29 +14,63 @@ conan_cmake_run(REQUIRES gflags/2.2.2@bincrafters/stable
 set(CMAKE_CPP_STANDARD 17)
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt5Test REQUIRED)
+
+# Not sure which OpenGL_GL_PREFERENCE is the best - the alternative is LEGACY
+set(OpenGL_GL_PREFERENCE "GLVND")
 find_package(OpenGL REQUIRED)
 
 add_executable(HeapVizGL
         heapvizwindow.ui
-        main.cpp
-        heapvizwindow.cpp
-        glheapdiagram.cpp
-        heapblock.cpp
-        vertex.cpp
-        transform3d.cpp
-        heaphistory.cpp
-        displayheapwindow.cpp
-        heapwindow.cpp
-        glheapdiagramlayer.cpp
-        gridlayer.cpp
-        linearbrightnesscolorscale.cpp
-        heapblockdiagramlayer.cpp
-        eventdiagramlayer.cpp
-        addressdiagramlayer.cpp
-        glsl_simulation_functions.cpp
-        activeregionsdiagramlayer.cpp
-        activeregioncache.cpp
         resource.qrc
-        )
+        activeregioncache.cpp
+        activeregionsdiagramlayer.cpp
+        addressdiagramlayer.cpp
+        displayheapwindow.cpp
+        eventdiagramlayer.cpp
+        glheapdiagram.cpp
+        glheapdiagramlayer.cpp
+        glsl_simulation_functions.cpp
+        gridlayer.cpp
+        heapblock.cpp
+        heapblockdiagramlayer.cpp
+        heaphistory.cpp
+        heapvizwindow.cpp
+        heapwindow.cpp
+        linearbrightnesscolorscale.cpp
+        main.cpp
+        transform3d.cpp
+        vertex.cpp)
 
-target_link_libraries(HeapVizGL Qt5::Widgets OpenGL::GL ${CONAN_LIBS})
+target_link_libraries(HeapVizGL
+        ${CONAN_LIBS}
+        OpenGL::GL
+        Qt5::Widgets)
+
+add_executable(HeapVizGLTest
+        heapvizwindow.ui
+        resource.qrc
+        activeregioncache.cpp
+        activeregionsdiagramlayer.cpp
+        addressdiagramlayer.cpp
+        displayheapwindow.cpp
+        eventdiagramlayer.cpp
+        glheapdiagram.cpp
+        glheapdiagramlayer.cpp
+        glsl_simulation_functions.cpp
+        gridlayer.cpp
+        heapblock.cpp
+        heapblockdiagramlayer.cpp
+        heaphistory.cpp
+        heapvizwindow.cpp
+        heapwindow.cpp
+        linearbrightnesscolorscale.cpp
+        testactiveregioncache.cpp
+        testdisplayheapwindow.cpp
+        transform3d.cpp
+        vertex.cpp)
+
+target_link_libraries(HeapVizGLTest
+        OpenGL::GL
+        Qt5::Test
+        Qt5::Widgets)
