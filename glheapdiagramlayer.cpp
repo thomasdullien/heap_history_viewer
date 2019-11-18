@@ -7,6 +7,8 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLFunctions>
 
+#include <inttypes.h>
+
 #include "glheapdiagramlayer.h"
 
 // Users of this class need to provide a vertex and fragment shader program, and

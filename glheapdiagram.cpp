@@ -1,5 +1,6 @@
 #include <math.h>
 
+#include <inttypes.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
