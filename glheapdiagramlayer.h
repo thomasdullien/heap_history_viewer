@@ -15,8 +15,8 @@
 // allows easy drawing of an extra layer of the heap diagram.
 class GLHeapDiagramLayer {
 public:
-  GLHeapDiagramLayer(const std::string &vertex_shader_name,
-    const std::string &fragment_shader_name,
+  GLHeapDiagramLayer(std::string vertex_shader_name,
+    std::string fragment_shader_name,
     bool is_line_layer);
   ~GLHeapDiagramLayer();
   void initializeGLStructures(
@@ -40,7 +40,7 @@ public:
   void setDebug(bool value) { dump_debug_ = value; }
 protected:
   void setupStandardUniforms();
-  virtual void loadVerticesFromHeapHistory(const HeapHistory& history, bool all = false) = 0;
+  virtual void loadVerticesFromHeapHistory(const HeapHistory& history, bool all) = 0;
   void refreshGLBuffer(bool bind);
 
   // Helper functions to set the uniforms for the shaders.
@@ -59,26 +59,26 @@ protected:
 
   // An ivec3 that is filled with the uint64_t of the base address of the
   // displayed fraction of the heap.
-  int uniform_visible_heap_base_A_;
-  int uniform_visible_heap_base_B_;
-  int uniform_visible_heap_base_C_;
+  int uniform_visible_heap_base_A_ = 0;
+  int uniform_visible_heap_base_B_ = 0;
+  int uniform_visible_heap_base_C_ = 0;
 
   // The actual values that were set. Used for the internal C++ debug
   // simulation of the GLSL code.
-  int32_t visible_heap_base_A_;
-  int32_t visible_heap_base_B_;
-  int32_t visible_heap_base_C_;
+  int32_t visible_heap_base_A_ = 0;
+  int32_t visible_heap_base_B_ = 0;
+  int32_t visible_heap_base_C_ = 0;
 
   // The minimum tick is provided as ivec2.
-  int uniform_visible_tick_base_A_;
-  int uniform_visible_tick_base_B_;
+  int uniform_visible_tick_base_A_ = 0;
+  int uniform_visible_tick_base_B_ = 0;
 
   // The actual values that were last set.
-  int32_t visible_tick_base_A_;
-  int32_t visible_tick_base_B_;
+  int32_t visible_tick_base_A_ = 0;
+  int32_t visible_tick_base_B_ = 0;
 
   // The matrix to project heap vertices to the screen.
-  int uniform_vertex_to_screen_;
+  int uniform_vertex_to_screen_ = 0;
 
   // Actual values for the matrix.
   QMatrix2x2 vertex_to_screen_;

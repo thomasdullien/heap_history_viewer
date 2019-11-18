@@ -20,7 +20,7 @@ public:
   static inline int stride() { return sizeof(HeapVertex); }
 
   uint32_t getX() const { return x_; }
-  uint64_t getY() const { return (static_cast<uint64_t>(y2_) << 32) + y1_; }
+  uint64_t getY() const { return (static_cast<uint64_t>(y2_) << 32u) + y1_; }
   const QVector3D &getColor() const { return color_; }
 
   static const int PositionTupleSize = 3;

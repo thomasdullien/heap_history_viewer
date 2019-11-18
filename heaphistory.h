@@ -17,10 +17,6 @@
 #include "heapwindow.h"
 #include "vertex.h"
 
-// 128-bit signed and unsigned integer types.
-typedef __int128 int128_t;
-typedef unsigned __int128 uint128_t;
-
 class HeapConflict {
 public:
   HeapConflict(uint32_t tick, uint64_t address, bool alloc);
@@ -107,7 +103,7 @@ private:
   // called to update the internal data structures for fast block search.
   void updateCachedSortedIterators();
 
-  bool hasMandatoryJSONElementFields(const nlohmann::json &json_element);
+  static bool hasMandatoryJSONElementFields(const nlohmann::json &json_element);
 
   std::vector<std::vector<HeapBlock>::iterator>
       cached_blocks_sorted_by_address_;
@@ -145,7 +141,7 @@ private:
   // Cache for keeping regions with heap activity at different zoom levels.
   ActiveRegionCache active_region_cache_;
 
-  uint32_t ColorStringToUint32(const std::string &color);
+  static uint32_t ColorStringToUint32(const std::string &color);
 };
 
 #endif // HEAPHISTORY_H

@@ -4,14 +4,14 @@ ActiveRegionsDiagramLayer::ActiveRegionsDiagramLayer() :
   GLHeapDiagramLayer(":/active_pages.vert", ":/simple.frag", false) {
 }
 
-void ActiveRegionsDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history, bool all) {
+void ActiveRegionsDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history, bool) {
   std::vector<HeapVertex> *vertices = getVertexVector();
   vertices->clear();
   history.activeRegionsToVertices(vertices);
 }
 
 std::pair<vec4, vec4> ActiveRegionsDiagramLayer::vertexShaderSimulator(const HeapVertex& vertex) {
-  ivec3 position(vertex.getX(), vertex.getY() & 0xFFFFFFFF, vertex.getY() >> 32);
+  ivec3 position(vertex.getX(), vertex.getY() & 0xFFFFFFFF, vertex.getY() >> 32u);
   int visible_heap_base_A = visible_heap_base_A_;
   int visible_heap_base_B = visible_heap_base_B_;
   int visible_heap_base_C = visible_heap_base_C_;

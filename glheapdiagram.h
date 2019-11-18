@@ -22,10 +22,10 @@ class OpenGLShaderProgram;
 
 class GLHeapDiagram : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
-  explicit GLHeapDiagram(QWidget *parent = 0);
-  ~GLHeapDiagram();
-  QSize sizeHint();
-  QSize minimumSizeHint();
+  explicit GLHeapDiagram(QWidget *parent = nullptr);
+  ~GLHeapDiagram() override;
+  QSize sizeHint() const override;
+  QSize minimumSizeHint() const override;
 
 signals:
   void frameSwapped();
@@ -33,20 +33,20 @@ signals:
   void showMessage(std::string);
 
 public slots:
-  void setFileToDisplay(QString filename);
+  void setFileToDisplay(const QString& filename);
   void setSizeToHighlight(uint32_t size);
 
 protected slots:
   void update();
 
 protected:
-  void initializeGL();
-  void paintGL();
-  void resizeGL(int width, int height);
+  void initializeGL() override;
+  void paintGL() override;
+  void resizeGL(int width, int height) override;
 
-  void mousePressEvent(QMouseEvent *event);
-  void mouseMoveEvent(QMouseEvent *event);
-  void wheelEvent(QWheelEvent *event);
+  void mousePressEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *event) override;
+  void wheelEvent(QWheelEvent *event) override;
 
 private:
   Q_OBJECT

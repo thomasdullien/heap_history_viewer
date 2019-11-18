@@ -21,13 +21,13 @@ private:
   // Makes the test class a friend to permit testing private functions.
   friend class TestActiveRegionCache;
 
-  uint64_t cacheIndexToSize(uint64_t index);
+  static uint64_t cacheIndexToSize(uint64_t index);
   void coalesceCache(uint64_t cache_index);
-  void insertRegionsForBlock(std::map<uint64_t, uint64_t>* region,
+  static void insertRegionsForBlock(std::map<uint64_t, uint64_t>* region,
     uint64_t region_size, uint64_t block_address, uint64_t block_size);
-  void insertPointer(std::map<uint64_t, uint64_t>* region,
+  static void insertPointer(std::map<uint64_t, uint64_t>* region,
     uint64_t region_size, uint64_t pointer);
-  uint64_t calculateNumberOfCacheEntries(uint64_t maximum_height);
+  static uint64_t calculateNumberOfCacheEntries(uint64_t maximum_height);
 
   // Vector of active regions of the form "start address, upper limit".
   std::vector<std::map<uint64_t, uint64_t>> cached_regions_;

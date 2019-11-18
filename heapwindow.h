@@ -1,6 +1,6 @@
 #ifndef HEAPWINDOW_H
 #define HEAPWINDOW_H
-#include "stdint.h"
+#include <cstdint>
 
 class HeapWindow {
 public:

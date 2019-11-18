@@ -46,7 +46,7 @@ void HeapVizWindow::blockClicked(bool b, HeapBlock block) {
   statusBar()->showMessage( b ? getBlockInformationAsString(block).c_str() : "No block");
 }
 
-void HeapVizWindow::showMessage(std::string message) {
+void HeapVizWindow::showMessage(const std::string& message) {
   QString message_to_show(message.c_str());
   statusBar()->showMessage(message_to_show);
 }

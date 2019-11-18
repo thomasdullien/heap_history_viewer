@@ -5,6 +5,7 @@
 class ActiveRegionsDiagramLayer : public GLHeapDiagramLayer {
 public:
   ActiveRegionsDiagramLayer();
+  virtual ~ActiveRegionsDiagramLayer() = default;
   std::pair<vec4, vec4> vertexShaderSimulator(const HeapVertex& vertex) override;
   void loadVerticesFromHeapHistory(const HeapHistory& history, bool all) override;
 };

@@ -63,7 +63,7 @@ float Multiply64BitWithFloat(ivec2 a, float b) {
   result = result + a2 * b * left_shift_32f;
   result = result + a3 * b * left_shift_48f;
   if (is_negative) {
-    result = result * (-1.0);
+    result = result * (-1.0f);
   }
   return result;
 }
@@ -134,7 +134,7 @@ float Multiply96BitWithFloat(ivec3 a, float b) {
   result = result + a4 * b * left_shift_64f;
   result = result + a5 * b * left_shift_80f;
   if (is_negative) {
-    result = result * (-1.0);
+    result = result * (-1.0f);
   }
   return result;
 }
@@ -214,14 +214,14 @@ ivec3 LongDoubleTo96Bits(long double value) {
   return result;
 }
 
-const std::string ivec3ToHex(const ivec3& iv3) {
+std::string ivec3ToHex(const ivec3& iv3) {
   char buf[200];
   sprintf(buf, "%8.08x%8.08x%8.08x", static_cast<uint32_t>(iv3.z),
     static_cast<uint32_t>(iv3.y), static_cast<uint32_t>(iv3.x));
   return std::string(buf);
 }
 
-const std::string ivec2ToHex(const ivec2& iv2) {
+std::string ivec2ToHex(const ivec2& iv2) {
   char buf[200];
   sprintf(buf, "%8.08x%8.08x", static_cast<uint32_t>(iv2.y),
     static_cast<uint32_t>(iv2.x));
