@@ -250,6 +250,7 @@ long double DisplayHeapWindow::getXScalingHeapToScreen() const {
 
 static int num_leading_zero_bits(uint32_t value) {
 #ifdef _MSC_VER
+    Q_UNUSED(value);
 #pragma message ( "WARNING: TODO num_leading_zero_bits not implemented on Windows" )
     return 0; // TODO(patricia-gallardo) - Implement on Windows
 #else
@@ -276,7 +277,7 @@ long double DisplayHeapWindow::getYScalingHeapToScreen() const {
   uint64_t shifted_height = shifted_lower_part | shifted_upper_part;
   long double factor = static_cast<long double>(1.0) / shifted_height;
   // Now account for the shift.
-  long double factor2 = static_cast<long double>(1.0) / (1 << high_bit);
+  long double factor2 = static_cast<long double>(1.0) / (1u << high_bit);
   long double result = sqrt(static_cast<long double>(factor * factor2));
 
   return result;

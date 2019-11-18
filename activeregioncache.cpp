@@ -26,6 +26,7 @@ ActiveRegionCache::ActiveRegionCache(uint64_t maximum_height,
 
 static int num_leading_zero_bits(uint64_t value) {
 #ifdef _MSC_VER
+    Q_UNUSED(value);
 #pragma message ( "WARNING: TODO num_leading_zero_bits not implemented on Windows" )
     return 0; // TODO(patricia-gallardo): Implement on Windows
 #else
