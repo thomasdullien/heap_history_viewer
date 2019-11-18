@@ -24,8 +24,8 @@ class GLHeapDiagram : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
   explicit GLHeapDiagram(QWidget *parent = 0);
   ~GLHeapDiagram();
-  QSize sizeHint();
-  QSize minimumSizeHint();
+  QSize sizeHint() const override;
+  QSize minimumSizeHint() const override;
 
 signals:
   void frameSwapped();
@@ -40,13 +40,13 @@ protected slots:
   void update();
 
 protected:
-  void initializeGL();
-  void paintGL();
-  void resizeGL(int width, int height);
+  void initializeGL() override;
+  void paintGL() override;
+  void resizeGL(int width, int height) override;
 
-  void mousePressEvent(QMouseEvent *event);
-  void mouseMoveEvent(QMouseEvent *event);
-  void wheelEvent(QWheelEvent *event);
+  void mousePressEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *event) override;
+  void wheelEvent(QWheelEvent *event) override;
 
 private:
   Q_OBJECT

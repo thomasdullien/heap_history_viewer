@@ -66,7 +66,7 @@ void GLHeapDiagram::initializeGL() {
   loadFileInternal();
 }
 
-QSize GLHeapDiagram::minimumSizeHint() { return QSize(500, 500); }
+QSize GLHeapDiagram::minimumSizeHint() const { return QSize(500, 500); }
 
 void GLHeapDiagram::setFileToDisplay(QString filename) {
   file_to_load_ = filename.toStdString();
@@ -80,7 +80,7 @@ void GLHeapDiagram::setSizeToHighlight(uint32_t size) {
   update();
 }
 
-QSize GLHeapDiagram::sizeHint() { return QSize(1024, 1024); }
+QSize GLHeapDiagram::sizeHint() const { return QSize(1024, 1024); }
 
 void GLHeapDiagram::updateHeapToScreenMap() {
   double y_scaling;

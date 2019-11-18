@@ -319,7 +319,7 @@ void HeapHistory::activeRegionsToVertices(std::vector<HeapVertex> *vertices)
   uint64_t region_size;
   // Determine the correct active regions on this zoom level.
   getActiveRegions(&address_ranges, &region_size);
-  printf("Got %llu ranges at granularity %llx\n", address_ranges.size(),
+  printf("Got %llu ranges at granularity %llx\n", uint64_t(address_ranges.size()),
     region_size);
 
   QVector3D color = QVector3D(0.0, 0.7, 0.0);
@@ -470,7 +470,7 @@ bool HeapHistory::getBlockAt(uint64_t address, uint32_t tick, HeapBlock *result,
   const std::vector<std::vector<HeapBlock>::iterator>::iterator candidate =
       std::lower_bound(cached_blocks_sorted_by_address_.begin(),
                        cached_blocks_sorted_by_address_.end(), val,
-                       [this](const std::vector<HeapBlock>::iterator &iterator,
+                       [](const std::vector<HeapBlock>::iterator &iterator,
                               const std::pair<uint64_t, uint32_t> &pair) {
                          fflush(stdout);
                          return (pair.first < iterator->address_) ||

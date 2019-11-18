@@ -37,7 +37,7 @@ if (MSVC)
     set(EXTRA_WARNINGS)
     set(TEMPORARILY_DISABLED_WARNINGS)
 elseif (APPLE)
-    set(EXTRA_WARNINGS -Wall -Wextra)
+    set(EXTRA_WARNINGS -Werror -Wall -Wextra)
     set(TEMPORARILY_DISABLED_WARNINGS
             -Wno-unused-variable
             -Wno-unused-parameter
