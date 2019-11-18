@@ -63,7 +63,7 @@ float Multiply64BitWithFloat(ivec2 a, float b) {
   result = result + a2 * b * left_shift_32f;
   result = result + a3 * b * left_shift_48f;
   if (is_negative) {
-    result = result * (-1.0);
+    result = result * (-1.0f);
   }
   return result;
 }
@@ -134,7 +134,7 @@ float Multiply96BitWithFloat(ivec3 a, float b) {
   result = result + a4 * b * left_shift_64f;
   result = result + a5 * b * left_shift_80f;
   if (is_negative) {
-    result = result * (-1.0);
+    result = result * (-1.0f);
   }
   return result;
 }

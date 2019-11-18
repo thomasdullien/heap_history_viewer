@@ -7,7 +7,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLFunctions>
 
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "glheapdiagramlayer.h"
 
@@ -33,10 +33,9 @@ void GLHeapDiagramLayer::refreshGLBuffer(bool bind) {
   if (bind) {
     layer_vertex_buffer_.bind();
   }
-  size_t needed_size = layer_vertices_.size() * sizeof(HeapVertex);
 
-  assert(layer_vertex_buffer_.size() >= 0);
-  if (size_t(layer_vertex_buffer_.size()) < needed_size) {
+  int needed_size = static_cast<int>((layer_vertices_.size() * sizeof(HeapVertex)));
+  if (layer_vertex_buffer_.size() < needed_size) {
     layer_vertex_buffer_.allocate(needed_size);
   }
   if(!layer_vertices_.empty()) {
@@ -151,8 +150,8 @@ void GLHeapDiagramLayer::paintLayer(ivec2 tick, ivec3 address,
 
   {
     layer_vao_.bind();
-    glDrawArrays(is_line_layer_ ? GL_LINES : GL_TRIANGLES, 0,
-      layer_vertices_.size() * sizeof(HeapVertex));
+    auto count = static_cast<uint32_t>((layer_vertices_.size() * sizeof(HeapVertex)));
+    glDrawArrays(is_line_layer_ ? GL_LINES : GL_TRIANGLES, 0, count);
     layer_vao_.release();
   }
   layer_shader_program_->release();

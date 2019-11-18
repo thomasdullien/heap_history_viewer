@@ -1,6 +1,6 @@
-#include <math.h>
+#include <cmath>
 
-#include <inttypes.h>
+#include <cinttypes>
 #include <iostream>
 #include <fstream>
 #include <sstream>

@@ -37,14 +37,9 @@ find_package(OpenGL REQUIRED)
 # TODO(patricia-gallardo): Fix all of these
 if (MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    set(EXTRA_WARNINGS /WX)
-    set(TEMPORARILY_DISABLED_WARNINGS
-            /wd4018 # signed/unsigned mismatch
-            /wd4267 # conversion from 'X' to 'Y', possible loss of data
-            /wd4244 # conversion from 'X' to 'Y', possible loss of data
-            /wd4305 # truncation from 'X' to 'Y'
-            /wd4334 # '<<': result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)
-            )
+    set(EXTRA_WARNINGS /WX) # -Werror
+    # /wd4244 disables warings around conversion to or from 'long double', possible loss of data
+    set(TEMPORARILY_DISABLED_WARNINGS /wd4244)
 else ()
     set(EXTRA_WARNINGS -Werror -Wall -Wextra)
     set(TEMPORARILY_DISABLED_WARNINGS)

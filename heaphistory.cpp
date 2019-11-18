@@ -153,7 +153,8 @@ void HeapHistory::recordMalloc(uint64_t address, size_t size,
     recordMallocConflict(address, size, heap_id);
     return;
   }
-  heap_blocks_.push_back(HeapBlock(current_tick_, size, address, tag));
+  assert(size <= std::numeric_limits<uint32_t>::max());
+  heap_blocks_.push_back(HeapBlock(current_tick_, static_cast<uint32_t>(size), address, tag));
   this->cached_blocks_sorted_by_address_.clear();
 
   live_blocks_[std::make_pair(address, heap_id)] = heap_blocks_.size() - 1;
@@ -326,7 +327,7 @@ void HeapHistory::activeRegionsToVertices(std::vector<HeapVertex> *vertices)
   printf("Got %" PRIu64 " ranges at granularity %" PRIx64 "\n", uint64_t(address_ranges.size()),
     region_size);
 
-  QVector3D color = QVector3D(0.0, 0.7, 0.0);
+  QVector3D color = QVector3D(0.0f, 0.7f, 0.0f);
   uint32_t lower_left_x = 0; // Minimum Tick.
   uint32_t lower_right_x = getMaximumTick();
   for (std::pair<uint64_t, uint64_t> range : address_ranges) {
