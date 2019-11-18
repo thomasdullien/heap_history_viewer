@@ -95,6 +95,8 @@ void DisplayHeapWindow::pan(double dx, double dy) {
 void DisplayHeapWindow::zoomToPoint(double dx, double dy, double how_much_x,
                                     double how_much_y, long double max_height,
                                     long double max_width) {
+  (void) max_height; // TODO(patricia-gallardo): Is the parameter needed?
+  (void) max_width; // TODO(patricia-gallardo): Is the parameter needed?
   long double epsilon = 0.05;
   long double height = getHeightAsLongDouble();
   long double width = getWidthAsLongDouble();
@@ -165,7 +167,8 @@ bool DisplayHeapWindow::mapDisplayCoordinateToHeap(double dx, double dy,
   int64_t tentative_tick = relative_x + minimum_tick_.getInt64();
 
   // Check if the numbers are in bounds.
-  if ((tentative_tick < 0) || (tentative_tick > 0xFFFFFFFFFUL) ||
+  if ((tentative_tick < std::numeric_limits<uint32_t>::min()) ||
+      (tentative_tick > std::numeric_limits<uint32_t>::max()) ||
       (tentative_address.z > 0xF) || (tentative_address.z < 0)) {
     return false;
   }
@@ -249,7 +252,7 @@ long double DisplayHeapWindow::getXScalingHeapToScreen() const {
 static int num_leading_zero_bits(uint32_t value) {
 #ifdef _MSC_VER
 #pragma message ( "WARNING: TODO num_leading_zero_bits not implemented on Windows" )
-    return 0; // TODO - fixme
+    return 0; // TODO(patricia-gallardo) - Implement on Windows
 #else
     return __builtin_clz(value);
 #endif
@@ -330,6 +333,9 @@ void DisplayHeapWindow::internalMapAddressCoordinateToDisplay(
   int visible_heap_base_C, int visible_tick_base_A, int visible_tick_base_B,
   float scale_heap_x, float scale_heap_y) const {
 
+  Q_UNUSED(visible_tick_base_A);
+  Q_UNUSED(visible_tick_base_B);
+
   float scale_heap_to_screen[2][2] = {{scale_heap_x, 0.0}, {0.0, scale_heap_y}};
   // =========================================================================
   // Everything below should be valid C++ and also valid GLSL! This code is
@@ -368,6 +374,7 @@ void DisplayHeapWindow::internalMapAddressCoordinateToDisplay(
   // End of mandatory valid GLSL part.
   // ==========================================================================
 
+  Q_UNUSED(final_x);
   printf("%f ", final_y);
 }
 

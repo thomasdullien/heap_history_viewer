@@ -34,7 +34,7 @@ set(OpenGL_GL_PREFERENCE "GLVND")
 find_package(OpenGL REQUIRED)
 
 # Warnings:
-# TODO: Fix all of these
+# TODO(patricia-gallardo): Fix all of these
 if (MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     set(EXTRA_WARNINGS /WX)
@@ -53,11 +53,7 @@ elseif (APPLE)
             -Wno-sign-compare)
 else ()
     set(EXTRA_WARNINGS -Werror -Wall -Wextra)
-    set(TEMPORARILY_DISABLED_WARNINGS
-            -Wno-unused-variable
-            -Wno-unused-parameter
-            -Wno-unused-but-set-variable
-            -Wno-sign-compare)
+    set(TEMPORARILY_DISABLED_WARNINGS)
 endif ()
 
 add_executable(HeapVizGL

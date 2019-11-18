@@ -49,7 +49,6 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
   nlohmann::json incoming_data;
   incoming_data << jsondata;
 
-  uint32_t counter = 0;
   for (const auto &json_element : incoming_data) {
     if (!hasMandatoryJSONElementFields(json_element)) {
       continue;
@@ -223,11 +222,14 @@ void HeapHistory::recordFilterRange(uint64_t low, uint64_t high) {
 }
 
 void HeapHistory::recordFreeConflict(uint64_t address, uint8_t heap_id) {
+  Q_UNUSED(heap_id);
   conflicts_.push_back(HeapConflict(current_tick_, address, false));
 }
 
 void HeapHistory::recordMallocConflict(uint64_t address, size_t size,
                                        uint8_t heap_id) {
+  Q_UNUSED(size);
+  Q_UNUSED(heap_id);
   conflicts_.push_back(HeapConflict(current_tick_, address, true));
 }
 
@@ -403,17 +405,15 @@ bool HeapHistory::getEventAtTick(uint32_t tick, std::string *eventstring) {
 
     while ((iterator_approx != tick_to_event_strings_.end() &&
            (abs(static_cast<int32_t>(iterator_approx->first - tick)) < 300))) {
-      if (abs(static_cast<int32_t>(iterator_approx->first - tick)) <= minimum) {
-        minimum = abs(static_cast<int32_t>(iterator_approx->first - tick));
+
+      uint32_t distance = abs(static_cast<int32_t>(iterator_approx->first - tick));
+      if (distance <= minimum) {
+        minimum = distance;
         *eventstring = iterator_approx->second.second;
       }
       ++iterator_approx;
     }
-    if (minimum != std::numeric_limits<uint32_t>::max()) {
-      return true;
-    } else {
-      return false;
-    }
+    return minimum != std::numeric_limits<uint32_t>::max();
   } else {
     *eventstring = iterator->second.second;
     return true;

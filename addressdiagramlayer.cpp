@@ -5,7 +5,7 @@ AddressDiagramLayer::AddressDiagramLayer() :
   GLHeapDiagramLayer(":/address_shader.vert", ":/simple.frag", true) {
 }
 
-void AddressDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history, bool all) {
+void AddressDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history, bool) {
   std::vector<HeapVertex> *vertices = getVertexVector();
   vertices->clear();
   history.addressesToVertices(vertices);
@@ -23,6 +23,9 @@ std::pair<vec4, vec4> AddressDiagramLayer::vertexShaderSimulator(const HeapVerte
   float scale_heap_y = matrix_data[3];
   float scale_heap_to_screen[2][2] = {{scale_heap_x, 0.0}, {0.0, scale_heap_y}};
   vec3 color(vertex.getColor().x(), vertex.getColor().y(), vertex.getColor().z());
+
+  Q_UNUSED(visible_tick_base_A);
+  Q_UNUSED(visible_tick_base_B);
 
   // =========================================================================
   // Everything below should be valid C++ and also valid GLSL! This code is

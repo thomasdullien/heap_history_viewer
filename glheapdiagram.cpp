@@ -143,7 +143,7 @@ void GLHeapDiagram::update() {
   QOpenGLWidget::update();
 }
 
-void GLHeapDiagram::resizeGL(int w, int h) { printf("Resize GL was called\n"); }
+void GLHeapDiagram::resizeGL(int w, int h) { printf("Resize GL was called w: %d h: %d\n", w, h); }
 
 GLHeapDiagram::~GLHeapDiagram() {}
 

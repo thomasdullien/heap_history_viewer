@@ -31,12 +31,15 @@ void GLHeapDiagramLayer::refreshGLBuffer(bool bind) {
   if (bind) {
     layer_vertex_buffer_.bind();
   }
-  if (layer_vertex_buffer_.size() < (layer_vertices_.size() * sizeof(HeapVertex))) {
-    layer_vertex_buffer_.allocate(layer_vertices_.size() * sizeof(HeapVertex));
+  size_t needed_size = layer_vertices_.size() * sizeof(HeapVertex);
+
+  assert(layer_vertex_buffer_.size() >= 0);
+  if (size_t(layer_vertex_buffer_.size()) < needed_size) {
+    layer_vertex_buffer_.allocate(needed_size);
   }
-  if(layer_vertices_.size() > 0) {
+  if(!layer_vertices_.empty()) {
       layer_vertex_buffer_.write(0, &layer_vertices_[0],
-        layer_vertices_.size() * sizeof(HeapVertex));
+                                 needed_size);
   }
   if (bind) {
     layer_vertex_buffer_.release();

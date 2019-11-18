@@ -4,7 +4,7 @@ ActiveRegionsDiagramLayer::ActiveRegionsDiagramLayer() :
   GLHeapDiagramLayer(":/active_pages.vert", ":/simple.frag", false) {
 }
 
-void ActiveRegionsDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history, bool all) {
+void ActiveRegionsDiagramLayer::loadVerticesFromHeapHistory(const HeapHistory& history, bool) {
   std::vector<HeapVertex> *vertices = getVertexVector();
   vertices->clear();
   history.activeRegionsToVertices(vertices);
