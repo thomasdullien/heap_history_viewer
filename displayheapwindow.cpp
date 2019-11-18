@@ -245,6 +245,15 @@ long double DisplayHeapWindow::getXScalingHeapToScreen() const {
   return result;
 }
 
+static int num_leading_zero_bits(uint32_t value) {
+#ifdef _MSC_VER
+#pragma message ( "WARNING: TODO num_leading_zero_bits not implemented on Windows" )
+    return 0; // TODO - fixme
+#else
+    return __builtin_clz(value);
+#endif
+}
+
 // Scaling to map the heap Y to the interval [0, 1].
 long double DisplayHeapWindow::getYScalingHeapToScreen() const {
   checkInternalValuesForSanity();
@@ -257,7 +266,7 @@ long double DisplayHeapWindow::getYScalingHeapToScreen() const {
   }
   // We are dealing with a value bigger than 64 bit now. Get left-most
   // bit.
-  uint32_t high_bit = 32 - __builtin_clz(height.upper_32);
+  uint32_t high_bit = 32 - num_leading_zero_bits(height.upper_32);
   uint64_t shifted_lower_part = height.getLowUint64() >> high_bit;
   uint64_t shifted_upper_part =
       (static_cast<uint64_t>(height.getUpper32()) << (64 - high_bit));

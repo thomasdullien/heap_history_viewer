@@ -24,9 +24,18 @@ ActiveRegionCache::ActiveRegionCache(uint64_t maximum_height,
   fflush(stdout);
 }
 
+static int num_leading_zero_bits(uint64_t value) {
+#ifdef _MSC_VER
+#pragma message ( "WARNING: TODO num_leading_zero_bits not implemented on Windows" )
+    return 0; // TODO - fixme
+#else
+    return __builtin_clzl(value);
+#endif
+}
+
 const std::map<uint64_t, uint64_t>* ActiveRegionCache::getActiveRegions(
  uint64_t region_minsize, uint64_t *region_size) const {
- int shift_value = std::max(64 - __builtin_clzl(region_minsize), 12);
+ int shift_value = std::max(64 - num_leading_zero_bits(region_minsize), 12);
  int index = std::min(
    static_cast<int>(cached_regions_.size()) - 1, shift_value - 12);
  *region_size = 1L << (index + 12);
