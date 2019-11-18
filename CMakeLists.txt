@@ -34,8 +34,15 @@ find_package(OpenGL REQUIRED)
 # Warnings:
 # TODO: Fix all of these
 if (MSVC)
-    set(EXTRA_WARNINGS)
-    set(TEMPORARILY_DISABLED_WARNINGS)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    set(EXTRA_WARNINGS /WX)
+    set(TEMPORARILY_DISABLED_WARNINGS
+            /wd4018 # signed/unsigned mismatch
+            /wd4267 # conversion from 'X' to 'Y', possible loss of data
+            /wd4244 # conversion from 'X' to 'Y', possible loss of data
+            /wd4305 # truncation from 'X' to 'Y'
+            /wd4334 # '<<': result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)
+            )
 elseif (APPLE)
     set(EXTRA_WARNINGS -Werror -Wall -Wextra)
     set(TEMPORARILY_DISABLED_WARNINGS
