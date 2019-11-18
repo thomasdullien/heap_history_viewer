@@ -17,8 +17,8 @@ GLHeapDiagramLayer::GLHeapDiagramLayer(
     const std::string &fragment_shader_name, bool is_line_layer)
     : vertex_shader_name_(vertex_shader_name),
       fragment_shader_name_(fragment_shader_name),
-      layer_shader_program_(new QOpenGLShaderProgram()),
-      is_line_layer_(is_line_layer) {}
+      is_line_layer_(is_line_layer),
+      layer_shader_program_(new QOpenGLShaderProgram()) {}
 
 GLHeapDiagramLayer::~GLHeapDiagramLayer() {
   if (is_initialized_) {
@@ -166,8 +166,8 @@ void GLHeapDiagramLayer::debugDumpVertexTransformation() {
   for (uint32_t index = 0; index < layer_vertices_.size(); ++index) {
     const HeapVertex& vertex = layer_vertices_[index];
     std::pair<vec4, vec4> result = vertexShaderSimulator(vertex);
-    printf("%08x.%08x.%08x (%d, %lx, Color %lx) --> ", visible_heap_base_C_, visible_heap_base_B_, visible_heap_base_A_, vertex.getX(), vertex.getY(),
-      vertex.getColor());
+    printf("%08x.%08x.%08x (%d, %lx, Color %f.%f.%f) --> ", visible_heap_base_C_, visible_heap_base_B_, visible_heap_base_A_, vertex.getX(), vertex.getY(),
+      vertex.getColor().x(), vertex.getColor().y(), vertex.getColor().z());
     printf("(%f, %f, %f, %f), (%f, %f, %f, %f)\n", result.first.w_, result.first.x_,
       result.first.y_, result.first.z_, result.second.w_, result.second.x_,
       result.second.y_, result.second.z_);

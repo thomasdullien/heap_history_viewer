@@ -231,7 +231,7 @@ void DisplayHeapWindow::checkInternalValuesForSanity() const {
   uint64_t width = maximum_tick_.getUint64() - minimum_tick_.getUint64();
   if (width & 0x8000000000000000L) {
     printf("[Alert!] Something is wrong with width:\n"
-      "%llx!\n", width);
+      "%lx!\n", width);
   }
 }
 
@@ -416,13 +416,13 @@ std::pair<float, float> DisplayHeapWindow::internalMapHeapCoordinateToDisplay(
   // XXX:DEBUG CODE
 
   if (debug_mode_) {
-    printf("[Debug]   (%08lx%08lx%08lx, %08lx%08lx) -> (%f, %f)\n", address.z,
+    printf("[Debug]   (%08x%08x%08x, %08x%08x) -> (%f, %f)\n", address.z,
       address.y, address.x, tick.y, tick.x, final_x, final_y);
-    printf("[Debug]   minimum_visible_tick: %08lx%08lx, heap_base: %08lx%08lx%08lx\n",
+    printf("[Debug]   minimum_visible_tick: %08x%08x, heap_base: %08x%08x%08x\n",
       minimum_visible_tick.y, minimum_visible_tick.x, heap_base.z,
-      heap_base.y);
-    printf("[Debug] address_coordinate_translated is %08lx%08lx%08lx, "
-      "tick_coordinate_translated is %08lx%08lx\n", address_coordinate_translated.z,
+      heap_base.y, heap_base.x);
+    printf("[Debug] address_coordinate_translated is %08x%08x%08x, "
+      "tick_coordinate_translated is %08x%08x\n", address_coordinate_translated.z,
       address_coordinate_translated.y, address_coordinate_translated.x,
       tick_coordinate_translated.y, tick_coordinate_translated.x);
     printf("[Debug]   temp_x is %f, temp_y is %f\n", temp_x, temp_y);

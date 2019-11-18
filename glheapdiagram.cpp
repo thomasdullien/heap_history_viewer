@@ -19,7 +19,9 @@
 #include "glheapdiagram.h"
 
 GLHeapDiagram::GLHeapDiagram(QWidget *parent)
-    : QOpenGLWidget(parent), file_to_load_(""), is_GL_initialized_(false),
+    : QOpenGLWidget(parent),
+      file_to_load_(""),
+      is_GL_initialized_(false),
       block_layer_(new HeapBlockDiagramLayer()),
       event_layer_(new EventDiagramLayer()),
       address_layer_(new AddressDiagramLayer()),
@@ -166,11 +168,11 @@ void GLHeapDiagram::mousePressEvent(QMouseEvent *event) {
     std::string eventstring;
     if (heap_history_.getEventAtTick(tick, &eventstring)) {
       char buf[1024];
-      sprintf(buf, "Event at tick %08.08lx: ", tick);
+      sprintf(buf, "Event at tick %8.8x: ", tick);
       emit showMessage(std::string(buf) + eventstring);
     } else {
       char buf[1024];
-      sprintf(buf, "Nothing here at tick %08.08lx and address %016.16lx", tick,
+      sprintf(buf, "Nothing here at tick %8.8x and address %16.16lx", tick,
               address);
       emit showMessage(std::string(buf));
     }

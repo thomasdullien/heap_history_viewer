@@ -120,7 +120,7 @@ void TestDisplayHeapWindow::MapFromHeapToScreenBottomLeftWindow() {
   ivec2 maximum_tick(0xFFFFFFF0, 0xF);
 
   // Now shift the coordinates left and down.
-  ivec3 half_window_height(0xFFFFFFFF8, 0xFFFFFFFF, 0x7);
+  ivec3 half_window_height(0xFFFFFFF8, 0xFFFFFFFF, 0x7);
   ivec2 half_window_width(0xFFFFFFF8, 0x7);
 
   minimum_address = Sub96(minimum_address, half_window_height);
@@ -161,7 +161,7 @@ void TestDisplayHeapWindow::MapFromHeapToScreenTopRightWindow() {
   ivec2 maximum_tick(0xFFFFFFF0, 0xF);
 
   // Now shift the coordinates right and up.
-  ivec3 half_window_height(0xFFFFFFFF0, 0xFFFFFFFF, 0x7);
+  ivec3 half_window_height(0xFFFFFFF0, 0xFFFFFFFF, 0x7);
   ivec2 half_window_width(0xFFFFFFF0, 0x7);
 
   minimum_address = Add96(minimum_address, half_window_height);
