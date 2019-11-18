@@ -45,12 +45,6 @@ if (MSVC)
             /wd4305 # truncation from 'X' to 'Y'
             /wd4334 # '<<': result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?)
             )
-elseif (APPLE)
-    set(EXTRA_WARNINGS -Werror -Wall -Wextra)
-    set(TEMPORARILY_DISABLED_WARNINGS
-            -Wno-unused-variable
-            -Wno-unused-parameter
-            -Wno-sign-compare)
 else ()
     set(EXTRA_WARNINGS -Werror -Wall -Wextra)
     set(TEMPORARILY_DISABLED_WARNINGS)
