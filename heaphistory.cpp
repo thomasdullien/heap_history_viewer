@@ -6,6 +6,8 @@
 
 #include "heaphistory.h"
 
+#include <cinttypes>
+
 // Constructors for helper classes.
 
 HeapConflict::HeapConflict(uint32_t tick, uint64_t address, bool alloc)
@@ -319,7 +321,7 @@ void HeapHistory::activeRegionsToVertices(std::vector<HeapVertex> *vertices)
   uint64_t region_size;
   // Determine the correct active regions on this zoom level.
   getActiveRegions(&address_ranges, &region_size);
-  printf("Got %llu ranges at granularity %llx\n", uint64_t(address_ranges.size()),
+  printf("Got %" PRIu64 " ranges at granularity %" PRIx64 "\n", uint64_t(address_ranges.size()),
     region_size);
 
   QVector3D color = QVector3D(0.0, 0.7, 0.0);

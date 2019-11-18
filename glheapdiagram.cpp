@@ -160,7 +160,7 @@ void GLHeapDiagram::mousePressEvent(QMouseEvent *event) {
   HeapBlock current_block;
   uint32_t index;
 
-  printf("clicked at tick %d and address %llx\n", tick, address);
+  printf("clicked at tick %d and address %" PRIx64 "\n", tick, address);
   fflush(stdout);
 
   if (!heap_history_.getBlockAtSlow(address, tick, &current_block, &index)) {
@@ -172,7 +172,7 @@ void GLHeapDiagram::mousePressEvent(QMouseEvent *event) {
       emit showMessage(std::string(buf) + eventstring);
     } else {
       char buf[1024];
-      sprintf(buf, "Nothing here at tick %8.8x and address %16.16llx", tick,
+      sprintf(buf, "Nothing here at tick %8.8x and address %16.16" PRIx64, tick,
               address);
       emit showMessage(std::string(buf));
     }

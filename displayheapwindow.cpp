@@ -3,6 +3,8 @@
 #include "heaphistory.h"
 #include "heapwindow.h"
 
+#include <cinttypes>
+
 DisplayHeapWindow::DisplayHeapWindow() {}
 
 DisplayHeapWindow::DisplayHeapWindow(const ivec2 &minimum_tick,
@@ -230,8 +232,7 @@ void DisplayHeapWindow::checkInternalValuesForSanity() const {
   // Is maximum_address_ - minimum_address_ positive?
   uint64_t width = maximum_tick_.getUint64() - minimum_tick_.getUint64();
   if (width & 0x8000000000000000L) {
-    printf("[Alert!] Something is wrong with width:\n"
-      "%llx!\n", width);
+    printf("[Alert!] Something is wrong with width:\n%" PRIx64 "\n", width);
   }
 }
 
