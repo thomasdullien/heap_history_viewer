@@ -25,7 +25,7 @@ HeapVizWindow::HeapVizWindow(const std::string* inputfile,
     } else {
       can_file_be_opened = true;
     }
-  } while (can_file_be_opened);
+  } while (!can_file_be_opened);
 
   emit setFileToDisplay(input_filename);
 }

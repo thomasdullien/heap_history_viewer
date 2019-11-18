@@ -19,11 +19,11 @@
 #include "glheapdiagram.h"
 
 GLHeapDiagram::GLHeapDiagram(QWidget *parent)
-    : QOpenGLWidget(parent), block_layer_(new HeapBlockDiagramLayer()),
+    : QOpenGLWidget(parent), file_to_load_(""), is_GL_initialized_(false),
+      block_layer_(new HeapBlockDiagramLayer()),
       event_layer_(new EventDiagramLayer()),
       address_layer_(new AddressDiagramLayer()),
-      pages_layer_(new ActiveRegionsDiagramLayer()),
-      is_GL_initialized_(false), file_to_load_("") {
+      pages_layer_(new ActiveRegionsDiagramLayer()) {
 
   //  QObject::connect(this, SIGNAL(blockClicked), parent->parent(),
   //  SLOT(blockClicked));

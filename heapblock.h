@@ -29,7 +29,7 @@ public:
     return (tick >= start_tick_) && (tick <= end_tick_) &&
            (address >= address_) && (address <= address_ + size_);
   }
-  bool wasFreed() { return end_tick_ != std::numeric_limits<uint32_t>::max(); }
+  bool wasFreed() const { return end_tick_ != std::numeric_limits<uint32_t>::max(); }
 
   uint32_t start_tick_;
   uint32_t end_tick_;

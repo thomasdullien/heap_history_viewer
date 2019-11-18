@@ -47,9 +47,9 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
   nlohmann::json incoming_data;
   incoming_data << jsondata;
 
-  uint32_t counter = 0;
   for (const auto &json_element : incoming_data) {
     if (!hasMandatoryJSONElementFields(json_element)) {
+      printf("OH NOES MANDATORY ELEMENT MISSING\n");
       continue;
     }
     // The "type" field is mandatory for every event.
@@ -88,7 +88,15 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
 
     fflush(stdout);
   }
-  printf("heap_blocks_.size() is %d\n", heap_blocks_.size());
+  printf("heap_blocks_.size() is *%d*\n", heap_blocks_.size());
+  // Sweep through the existing blocks and dump out the non-freed ones.:w
+  for (const auto& block : heap_blocks_) {
+    if (!block.wasFreed()) {
+      printf("Alive block:\n%s\n", getBlockInformationAsString(block).c_str());
+    } else {
+      printf("Freed block:\n%s\n", getBlockInformationAsString(block).c_str());
+    }
+  }
   fflush(stdout);
 
   // Initialize the internal caches.
@@ -96,6 +104,7 @@ void HeapHistory::LoadFromJSONStream(std::istream &jsondata) {
     - global_area_.minimum_address_;
   active_region_cache_ = ActiveRegionCache(height,
     &heap_blocks_);
+
 }
 
 // Decide whether a block is worth sending to the graphics card.
