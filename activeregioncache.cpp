@@ -38,7 +38,7 @@ const std::map<uint64_t, uint64_t>* ActiveRegionCache::getActiveRegions(
  int shift_value = std::max(64 - num_leading_zero_bits(region_minsize), 12);
  int index = std::min(
    static_cast<int>(cached_regions_.size()) - 1, shift_value - 12);
- *region_size = uint64_t(1) << (index + 12);
+ *region_size = uint64_t(1) << (index + 12u);
  return &cached_regions_[index];
 }
 

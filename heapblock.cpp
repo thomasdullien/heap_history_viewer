@@ -3,7 +3,7 @@
 #include "linearbrightnesscolorscale.h"
 #include "heapblock.h"
 
-HeapBlock::HeapBlock() {}
+HeapBlock::HeapBlock() = default;
 
 HeapBlock::HeapBlock(uint32_t start_tick, uint32_t size, uint64_t address,
                      const std::string *alloctag = nullptr)

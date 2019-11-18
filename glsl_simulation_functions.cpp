@@ -214,14 +214,14 @@ ivec3 LongDoubleTo96Bits(long double value) {
   return result;
 }
 
-const std::string ivec3ToHex(const ivec3& iv3) {
+std::string ivec3ToHex(const ivec3& iv3) {
   char buf[200];
   sprintf(buf, "%8.08x%8.08x%8.08x", static_cast<uint32_t>(iv3.z),
     static_cast<uint32_t>(iv3.y), static_cast<uint32_t>(iv3.x));
   return std::string(buf);
 }
 
-const std::string ivec2ToHex(const ivec2& iv2) {
+std::string ivec2ToHex(const ivec2& iv2) {
   char buf[200];
   sprintf(buf, "%8.08x%8.08x", static_cast<uint32_t>(iv2.y),
     static_cast<uint32_t>(iv2.x));

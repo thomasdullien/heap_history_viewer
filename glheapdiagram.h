@@ -22,8 +22,8 @@ class OpenGLShaderProgram;
 
 class GLHeapDiagram : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
-  explicit GLHeapDiagram(QWidget *parent = 0);
-  ~GLHeapDiagram();
+  explicit GLHeapDiagram(QWidget *parent = nullptr);
+  ~GLHeapDiagram() override;
   QSize sizeHint() const override;
   QSize minimumSizeHint() const override;
 
@@ -33,7 +33,7 @@ signals:
   void showMessage(std::string);
 
 public slots:
-  void setFileToDisplay(QString filename);
+  void setFileToDisplay(const QString& filename);
   void setSizeToHighlight(uint32_t size);
 
 protected slots:

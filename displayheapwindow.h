@@ -46,9 +46,9 @@ public:
 
   uint32_t getMinimumTickUint32() const {
     return minimum_tick_.isNegative() ? 0 :
-      minimum_tick_.getUint64() >> 4; }
+      minimum_tick_.getUint64() >> 4u; }
   uint32_t getMaximumTickUint32() const {
-    return maximum_tick_.getUint64() >> 4; }
+    return maximum_tick_.getUint64() >> 4u; }
 
   ivec3 getMinimumAddress() const { return minimum_address_; }
   ivec3 getMaximumAddress() const { return maximum_address_; }
@@ -104,7 +104,7 @@ private:
 
   //std::vector<GLHeapDiagramLayer*> registered_layers_;
 
-  mutable bool debug_mode_;
+  mutable bool debug_mode_ = false;
 };
 
 #endif // DISPLAYHEAPWINDOW_H

@@ -1,9 +1,6 @@
-#include <cmath>
-
 #include <cinttypes>
 #include <iostream>
 #include <fstream>
-#include <sstream>
 
 #include <QApplication>
 #include <QFileDialog>
@@ -35,7 +32,7 @@ GLHeapDiagram::GLHeapDiagram(QWidget *parent)
 void GLHeapDiagram::loadFileInternal() {
   if (is_GL_initialized_) {
     // Load the heap history.
-    if (file_to_load_ != "") {
+    if (!file_to_load_.empty()) {
       std::ifstream ifs(file_to_load_, std::fstream::in);
       heap_history_.LoadFromJSONStream(ifs);
     }
@@ -67,9 +64,9 @@ void GLHeapDiagram::initializeGL() {
   loadFileInternal();
 }
 
-QSize GLHeapDiagram::minimumSizeHint() const { return QSize(500, 500); }
+QSize GLHeapDiagram::minimumSizeHint() const { return {500, 500}; }
 
-void GLHeapDiagram::setFileToDisplay(QString filename) {
+void GLHeapDiagram::setFileToDisplay(const QString& filename) {
   file_to_load_ = filename.toStdString();
   loadFileInternal();
 }
@@ -81,7 +78,7 @@ void GLHeapDiagram::setSizeToHighlight(uint32_t size) {
   update();
 }
 
-QSize GLHeapDiagram::sizeHint() const { return QSize(1024, 1024); }
+QSize GLHeapDiagram::sizeHint() const { return {1024, 1024}; }
 
 void GLHeapDiagram::updateHeapToScreenMap() {
   double y_scaling;
@@ -146,7 +143,7 @@ void GLHeapDiagram::update() {
 
 void GLHeapDiagram::resizeGL(int w, int h) { printf("Resize GL was called w: %d h: %d\n", w, h); }
 
-GLHeapDiagram::~GLHeapDiagram() {}
+GLHeapDiagram::~GLHeapDiagram() = default;
 
 void GLHeapDiagram::mousePressEvent(QMouseEvent *event) {
   double x = static_cast<double>(event->x()) / this->width();

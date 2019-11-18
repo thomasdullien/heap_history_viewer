@@ -1,11 +1,10 @@
 #include "displayheapwindow.h"
 #include "glsl_simulation_functions.h"
-#include "heaphistory.h"
 #include "heapwindow.h"
 
 #include <cinttypes>
 
-DisplayHeapWindow::DisplayHeapWindow() {}
+DisplayHeapWindow::DisplayHeapWindow() = default;
 
 DisplayHeapWindow::DisplayHeapWindow(const ivec2 &minimum_tick,
   const ivec2 &maximum_tick,
@@ -22,10 +21,10 @@ void DisplayHeapWindow::reset(const HeapWindow &global_window) {
   setMinAndMaxAddress(
     Load64BitLeftShiftedBy4Into96Bit(
       global_window.minimum_address_ & 0xFFFFFFFF,
-      global_window.minimum_address_ >> 32),
+      global_window.minimum_address_ >> 32u),
     Load64BitLeftShiftedBy4Into96Bit(
       global_window.maximum_address_ & 0xFFFFFFFF,
-      global_window.maximum_address_ >> 32));
+      global_window.maximum_address_ >> 32u));
 
   maximum_width_ = Sub64(maximum_tick_, minimum_tick_);
   maximum_height_ = Sub96(maximum_address_, minimum_address_);
@@ -173,12 +172,12 @@ bool DisplayHeapWindow::mapDisplayCoordinateToHeap(double dx, double dy,
     return false;
   }
   // Return the values.
-  uint64_t final_address = tentative_address.getLowUint64() >> 4;
+  uint64_t final_address = tentative_address.getLowUint64() >> 4u;
   uint64_t tentative_address_z = tentative_address.z;
-  tentative_address_z = tentative_address_z << 60;
+  tentative_address_z = tentative_address_z << 60u;
   final_address |= tentative_address_z;
   *address = final_address;
-  *tick = tentative_tick >> 4;
+  *tick = static_cast<uint32_t>(tentative_tick) >> 4u;
   return true;
 }
 
@@ -289,15 +288,14 @@ long double DisplayHeapWindow::getHeightAsLongDouble() const {
 }
 
 long double DisplayHeapWindow::getWidthAsLongDouble() const {
-  long double result = static_cast<long double>(maximum_tick_.getUint64() -
-                                                minimum_tick_.getUint64());
-  return result;
+  return static_cast<long double>(maximum_tick_.getUint64() -
+                                  minimum_tick_.getUint64());
 }
 
 std::pair<float, float>
 DisplayHeapWindow::mapHeapCoordinateToDisplay(uint32_t tick,
                                               uint64_t address) const {
-  ivec3 position(tick, address & 0xFFFFFFFF, address >> 32);
+  ivec3 position(tick, address & 0xFFFFFFFF, address >> 32u);
 
   return internalMapHeapCoordinateToDisplay(
       position, minimum_address_.x, minimum_address_.y, minimum_address_.z,
@@ -306,7 +304,7 @@ DisplayHeapWindow::mapHeapCoordinateToDisplay(uint32_t tick,
 }
 
 void DisplayHeapWindow::debugDumpHeapVertex(const HeapVertex& vertex) const {
-  ivec3 position(vertex.getX(), vertex.getY() & 0xFFFFFFFF, vertex.getY() >> 32);
+  ivec3 position(vertex.getX(), vertex.getY() & 0xFFFFFFFF, vertex.getY() >> 32u);
 
   internalMapAddressCoordinateToDisplay(
       position, minimum_address_.x, minimum_address_.y, minimum_address_.z,

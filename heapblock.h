@@ -31,13 +31,13 @@ public:
   }
   bool wasFreed() { return end_tick_ != std::numeric_limits<uint32_t>::max(); }
 
-  uint32_t start_tick_;
-  uint32_t end_tick_;
-  uint32_t size_;
-  uint64_t address_;
-  bool highlighted_;
-  const std::string* allocation_tag_;
-  const std::string* free_tag_;
+  uint32_t start_tick_ = 0;
+  uint32_t end_tick_ = 0;
+  uint32_t size_ = 0;
+  uint64_t address_ = 0;
+  bool highlighted_ = false;
+  const std::string* allocation_tag_ = nullptr;
+  const std::string* free_tag_ = nullptr;
 };
 
 std::string getBlockInformationAsString(const HeapBlock& block);

@@ -41,7 +41,7 @@ public:
     return static_cast<int64_t>(getUint64());
   }
   long double getLongDouble() const {
-    long double shift32 = static_cast<long double>(0x100000000);
+    auto shift32 = static_cast<long double>(0x100000000);
     long double result = y;
     result *= shift32;
     long double x2 = int32ToUint64(x);
@@ -55,8 +55,7 @@ public:
       return;
     }
     x ^= 1 << index;
-    return;
-  }
+ }
 
   union {
     struct {
@@ -85,19 +84,19 @@ public:
   }
 
   uint64_t getLowUint64() const {
-    uint64_t temp = static_cast<uint64_t>(static_cast<uint32_t>(y)) << 32;
+    uint64_t temp = static_cast<uint64_t>(static_cast<uint32_t>(y)) << 32u;
     temp |= static_cast<uint32_t>(x);
     return temp;
   }
   void setLowUint64(uint64_t val) {
     x = val & 0xFFFFFFFF;
-    y = val >> 32;
+    y = val >> 32u;
   }
   uint32_t getUpper32() const { return z; }
 
   // Convert the 96-bit integer to a long double.
   long double getLongDouble() const {
-    long double shift32 = static_cast<long double>(0x100000000L);
+    auto shift32 = static_cast<long double>(0x100000000L);
     long double result = z; // Intentional keep the sign.
     result *= shift32;
     long double y2 = int32ToUint64(y);
@@ -120,8 +119,7 @@ public:
       return;
     }
     x ^= 1 << index;
-    return;
-  }
+ }
 
   union {
     struct {
@@ -172,6 +170,6 @@ ivec2 Load32BitLeftShiftedBy4Into64Bit(int low);
 uint64_t Convert96BitTo64BitRightShift(ivec3 input);
 ivec2 LongDoubleTo64Bits(long double value);
 ivec3 LongDoubleTo96Bits(long double value);
-const std::string ivec3ToHex(const ivec3& iv3);
-const std::string ivec2ToHex(const ivec2& iv2);
+std::string ivec3ToHex(const ivec3& iv3);
+std::string ivec2ToHex(const ivec2& iv2);
 #endif // GLSL_SIMULATION_FUNCTIONS_H
