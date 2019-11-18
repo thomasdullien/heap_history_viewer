@@ -7,11 +7,12 @@ set(CMAKE_AUTOUIC ON)
 
 include(${CMAKE_SOURCE_DIR}/conan.cmake)
 
-if (CMAKE_PREFIX_PATH)
-    message(STATUS "Getting Qt from the system. CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}")
+if (DEFINED ENV{CMAKE_PREFIX_PATH})
+    message(STATUS "Getting Qt from the system. CMAKE_PREFIX_PATH = $ENV{CMAKE_PREFIX_PATH}")
     set(NEEDED_CONAN_DEPENDENCIES gflags/2.2.2@bincrafters/stable)
 else ()
     message(STATUS "Get Qt from Conan")
+    message(STATUS "If it fails try: 'conan remote add bincrafters \"https://api.bintray.com/conan/bincrafters/public-conan\"'")
     set(NEEDED_CONAN_DEPENDENCIES gflags/2.2.2@bincrafters/stable qt/5.12.6@bincrafters/stable)
 endif ()
 
