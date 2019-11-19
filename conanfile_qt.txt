@@ -1,0 +1,12 @@
+[generators]
+cmake
+virtualrunenv
+qt
+
+[requires]
+gflags/2.2.2@bincrafters/stable
+qt/5.12.6@bincrafters/stable
+
+[options]
+
+[imports]

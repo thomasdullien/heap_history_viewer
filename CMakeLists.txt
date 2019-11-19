@@ -16,16 +16,15 @@ conan_check(VERSION 1.20.3 REQUIRED)
 
 if (DEFINED ENV{CMAKE_PREFIX_PATH})
     message(STATUS "Getting Qt from the system. CMAKE_PREFIX_PATH = $ENV{CMAKE_PREFIX_PATH}")
-    set(NEEDED_CONAN_DEPENDENCIES gflags/2.2.2@bincrafters/stable)
+    set(PROJECT_CONAN_FILE conanfile_no_qt.txt)
 else ()
     message(STATUS "To use the Qt from your system, set the CMAKE_PREFIX_PATH env var")
     message(STATUS "Trying to get Qt from Conan - adding the bincrafters remote")
     conan_add_remote(NAME bincrafters INDEX 1 URL https://api.bintray.com/conan/bincrafters/public-conan)
-    set(NEEDED_CONAN_DEPENDENCIES gflags/2.2.2@bincrafters/stable qt/5.12.6@bincrafters/stable)
-    set(QT_GENERATOR qt)
+    set(PROJECT_CONAN_FILE conanfile_qt.txt)
 endif ()
 
-conan_cmake_run(REQUIRES ${NEEDED_CONAN_DEPENDENCIES} BASIC_SETUP BUILD missing GENERATORS ${QT_GENERATOR} virtualrunenv)
+conan_cmake_run(CONANFILE ${PROJECT_CONAN_FILE} BASIC_SETUP BUILD missing)
 
 if (QT_GENERATOR)
     # Copy the qt.conf file to be next to the binary
