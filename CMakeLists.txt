@@ -17,7 +17,8 @@ else ()
     set(NEEDED_CONAN_DEPENDENCIES gflags/2.2.2@bincrafters/stable qt/5.12.6@bincrafters/stable)
 endif ()
 
-conan_cmake_run(REQUIRES ${NEEDED_CONAN_DEPENDENCIES} BASIC_SETUP BUILD missing)
+# Might need more generators
+conan_cmake_run(REQUIRES ${NEEDED_CONAN_DEPENDENCIES} BASIC_SETUP BUILD missing GENERATORS qt virtualrunenv)
 
 set(CMAKE_CPP_STANDARD 17)
 
