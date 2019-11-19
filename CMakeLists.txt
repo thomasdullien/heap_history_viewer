@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 project(heap_history_viewer CXX)
 # https://github.com/conan-io/cmake-conan
 
+# Before running on Mac and Linux you probably need to 'source activate_run.sh´
+# On Windows: activate_run.bat
+# These are generated in the build directory
+
 if (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(WARNING "Building for anything but 64 bit is currently untested")
 endif ()
