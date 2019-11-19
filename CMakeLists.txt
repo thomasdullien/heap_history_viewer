@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(heap_history_viewer CXX)
+# https://github.com/conan-io/cmake-conan
+
+if (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(WARNING "Building for anything but 64 bit is currently untested")
+endif ()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -12,23 +17,26 @@ if (DEFINED ENV{CMAKE_PREFIX_PATH})
     set(NEEDED_CONAN_DEPENDENCIES gflags/2.2.2@bincrafters/stable)
 else ()
     message(STATUS "To use the Qt from your system, set the CMAKE_PREFIX_PATH env var")
-    message(STATUS "Trying to get Qt from Conan")
-    message(STATUS "If it fails try: 'conan remote add bincrafters \"https://api.bintray.com/conan/bincrafters/public-conan\"'")
+    message(STATUS "Trying to get Qt from Conan - adding the bincrafters remote")
+    conan_add_remote(NAME bincrafters INDEX 1 URL https://api.bintray.com/conan/bincrafters/public-conan)
     set(NEEDED_CONAN_DEPENDENCIES gflags/2.2.2@bincrafters/stable qt/5.12.6@bincrafters/stable)
 endif ()
 
-# Might need more generators
 conan_cmake_run(REQUIRES ${NEEDED_CONAN_DEPENDENCIES} BASIC_SETUP BUILD missing GENERATORS qt virtualrunenv)
+
+# Copy the qt.conf file to be next to the binary
+message(STATUS "Copy qt.conf from ${CMAKE_CURRENT_BINARY_DIR} to ${CMAKE_CURRENT_BINARY_DIR}/bin/")
+file(COPY ${CMAKE_CURRENT_BINARY_DIR}/qt.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin/)
 
 set(CMAKE_CPP_STANDARD 17)
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt5Test REQUIRED)
 
-if(APPLE)
+if (APPLE)
     # Silence OpenGL deprication warnings
     add_definitions(-DGL_SILENCE_DEPRECATION)
-endif()
+endif ()
 
 # Not sure which OpenGL_GL_PREFERENCE is the best - the alternative is LEGACY
 set(OpenGL_GL_PREFERENCE "GLVND")
@@ -46,7 +54,7 @@ else ()
     set(TEMPORARILY_DISABLED_WARNINGS)
 endif ()
 
-add_executable(HeapVizGL
+set(COMMON_FILES
         heapvizwindow.ui
         resource.qrc
         activeregioncache.cpp
@@ -64,9 +72,10 @@ add_executable(HeapVizGL
         heapvizwindow.cpp
         heapwindow.cpp
         linearbrightnesscolorscale.cpp
-        main.cpp
         transform3d.cpp
         vertex.cpp)
+
+add_executable(HeapVizGL ${COMMON_FILES} main.cpp)
 
 target_link_libraries(HeapVizGL
         ${CONAN_LIBS}
@@ -78,27 +87,9 @@ target_compile_options(HeapVizGL PRIVATE
         ${TEMPORARILY_DISABLED_WARNINGS})
 
 add_executable(HeapVizGLTest
-        heapvizwindow.ui
-        resource.qrc
-        activeregioncache.cpp
-        activeregionsdiagramlayer.cpp
-        addressdiagramlayer.cpp
-        displayheapwindow.cpp
-        eventdiagramlayer.cpp
-        glheapdiagram.cpp
-        glheapdiagramlayer.cpp
-        glsl_simulation_functions.cpp
-        gridlayer.cpp
-        heapblock.cpp
-        heapblockdiagramlayer.cpp
-        heaphistory.cpp
-        heapvizwindow.cpp
-        heapwindow.cpp
-        linearbrightnesscolorscale.cpp
+        ${COMMON_FILES}
         testactiveregioncache.cpp
-        testdisplayheapwindow.cpp
-        transform3d.cpp
-        vertex.cpp)
+        testdisplayheapwindow.cpp)
 
 target_link_libraries(HeapVizGLTest
         OpenGL::GL
