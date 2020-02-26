@@ -174,7 +174,7 @@ uint64_t Convert96BitTo64BitRightShift(ivec3 input) {
 
 ivec2 LongDoubleTo64Bits(long double value) {
   bool negative = (value < 0);
-  long double absolute = fabs(value);
+  long double absolute = std::abs(value);
   uint32_t highest_bit = log2(absolute);
   ivec2 result;
 
@@ -195,7 +195,7 @@ ivec2 LongDoubleTo64Bits(long double value) {
 
 ivec3 LongDoubleTo96Bits(long double value) {
   bool negative = (value < 0);
-  long double absolute = fabs(value);
+  long double absolute = std::abs(value);
   uint32_t highest_bit = log2(absolute);
   ivec3 result;
 
