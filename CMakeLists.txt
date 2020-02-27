@@ -1,25 +1,17 @@
 cmake_minimum_required(VERSION 3.10)
 project(heap_history_viewer CXX)
 
+set(CMAKE_CPP_STANDARD 17)
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-include(${CMAKE_SOURCE_DIR}/conan.cmake)
-
-if (DEFINED ENV{CMAKE_PREFIX_PATH})
-    message(STATUS "Getting Qt from the system. CMAKE_PREFIX_PATH = $ENV{CMAKE_PREFIX_PATH}")
-    set(NEEDED_CONAN_DEPENDENCIES gflags/2.2.2@bincrafters/stable)
-else ()
-    message(STATUS "To use the Qt from your system, set the CMAKE_PREFIX_PATH env var")
-    message(STATUS "Trying to get Qt from Conan")
-    message(STATUS "If it fails try: 'conan remote add bincrafters \"https://api.bintray.com/conan/bincrafters/public-conan\"'")
-    set(NEEDED_CONAN_DEPENDENCIES gflags/2.2.2@bincrafters/stable qt/5.12.6@bincrafters/stable)
-endif ()
-
-conan_cmake_run(REQUIRES ${NEEDED_CONAN_DEPENDENCIES} BASIC_SETUP BUILD missing)
-
-set(CMAKE_CPP_STANDARD 17)
+include(conan.cmake)
+conan_cmake_run(CONANFILE conanfile.py BASIC_SETUP CMAKE_TARGETS BUILD missing)
+if (NOT DEFINED ENV{CMAKE_PREFIX_PATH})
+    file(COPY ${CMAKE_BINARY_DIR}/qt.conf DESTINATION ${CMAKE_BINARY_DIR}/bin/)
+endif()
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt5Test REQUIRED)
@@ -68,7 +60,7 @@ add_executable(HeapVizGL
         vertex.cpp)
 
 target_link_libraries(HeapVizGL
-        ${CONAN_LIBS}
+        CONAN_PKG::gflags
         OpenGL::GL
         Qt5::Widgets)
 
